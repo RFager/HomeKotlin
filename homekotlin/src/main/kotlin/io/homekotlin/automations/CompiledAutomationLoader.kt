@@ -12,7 +12,6 @@ object CompiledAutomationLoader {
     fun loadAll(registry: AutomationRegistry, packageName: String = "io.homekotlin.automations") {
         val classes = findHomeScriptClasses(packageName)
         logger.info("Discovered ${classes.size} compiled automation class(es) in $packageName")
-
         for (clazz in classes) {
             try {
                 HomeScript.currentScriptCapture.clear()

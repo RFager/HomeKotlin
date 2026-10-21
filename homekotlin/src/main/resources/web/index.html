@@ -98,7 +98,7 @@
 
       <div class="nav-actions">
         <button class="action-btn secondary-btn" id="btn-codegen" onclick="openCodegenModal()">
-          <span class="btn-icon">✨</span> Generate Entities.kt
+          <span class="btn-icon">📦</span> Export Kotlin Code
         </button>
         <button class="action-btn primary-btn" id="btn-reload-scripts" onclick="reloadScripts()">
           <span class="btn-icon">🔄</span> Hot Reload
@@ -169,6 +169,9 @@
             <button class="pill-btn" onclick="selectDomainFilter('climate')">Climate</button>
             <button class="pill-btn" onclick="selectDomainFilter('sun')">Sun</button>
           </div>
+          <button class="action-btn secondary-btn" onclick="openCodegenModal(currentDomainFilter)" style="padding: 6px 14px; font-size: 12px; margin-left: auto;">
+            <span class="btn-icon">📥</span> Export as Kotlin
+          </button>
         </div>
 
         <div class="table-card">
@@ -254,23 +257,82 @@
       </section>
     </main>
 
-    <!-- Codegen Modal -->
+    <!-- Codegen Export Modal -->
     <div class="modal-backdrop" id="codegen-modal" onclick="closeCodegenModal(event)">
-      <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-card modal-card-wide" onclick="event.stopPropagation()">
         <div class="modal-header">
           <div class="modal-title-group">
-            <span class="modal-icon">✨</span>
-            <h3 class="modal-title">Type-Safe Kotlin Entity Definitions</h3>
+            <span class="modal-icon">📦</span>
+            <div>
+              <h3 class="modal-title">Export Entities to Kotlin</h3>
+              <p class="modal-subtitle">Ready-to-use Kotlin code for your automations with autocomplete and type safety</p>
+            </div>
           </div>
-          <button class="modal-close-btn" onclick="closeCodegenModal()">&times;</button>
+          <button class="modal-close-btn" onclick="closeCodegenModal()" title="Close">&times;</button>
         </div>
-        <p class="modal-desc">Copy this code into <code class="inline-code">src/main/kotlin/io/homekotlin/generated/Entities.kt</code> to enjoy full IDE autocomplete and static type safety in your automations.</p>
+
+        <!-- Export Configuration Bar -->
+        <div class="export-controls-bar">
+          <div class="control-section">
+            <span class="control-label">Code Format</span>
+            <div class="pill-group" id="codegen-style-pills">
+              <button class="pill-btn active" id="style-pill-objects" onclick="setExportStyle('objects')">
+                <span class="pill-icon">🧱</span> Grouped Objects
+              </button>
+              <button class="pill-btn" id="style-pill-constants" onclick="setExportStyle('constants')">
+                <span class="pill-icon">🏷️</span> Flat Constants
+              </button>
+              <button class="pill-btn" id="style-pill-typed" onclick="setExportStyle('typed')">
+                <span class="pill-icon">🛡️</span> Type-Safe DSL
+              </button>
+            </div>
+          </div>
+
+          <div class="control-section">
+            <span class="control-label">Domain Filter</span>
+            <div class="pill-group" id="codegen-domain-pills">
+              <button class="pill-btn active" id="export-domain-all" onclick="setExportDomain('')">All</button>
+              <button class="pill-btn" id="export-domain-light" onclick="setExportDomain('light')">Lights</button>
+              <button class="pill-btn" id="export-domain-switch" onclick="setExportDomain('switch')">Switches</button>
+              <button class="pill-btn" id="export-domain-sensor" onclick="setExportDomain('sensor')">Sensors</button>
+              <button class="pill-btn" id="export-domain-binary_sensor" onclick="setExportDomain('binary_sensor')">Binary</button>
+              <button class="pill-btn" id="export-domain-climate" onclick="setExportDomain('climate')">Climate</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Preview Header & Box -->
+        <div class="code-preview-header">
+          <div class="preview-stats">
+            <span class="status-indicator-dot online"></span>
+            <span id="codegen-stat-summary">Loading entities...</span>
+          </div>
+          <div class="preview-actions">
+            <button class="copy-small-btn" onclick="copyCodegen()" id="btn-preview-copy" title="Copy code">
+              <span>📋</span> Copy Snippet
+            </button>
+          </div>
+        </div>
+
         <div class="code-preview-wrap">
-          <pre class="code-preview"><code id="codegen-output">// Loading generated entities...</code></pre>
+          <pre class="code-preview"><code id="codegen-output">// Generating Kotlin code...</code></pre>
         </div>
+
         <div class="modal-footer">
-          <button class="action-btn secondary-btn" onclick="copyCodegen()">📋 Copy to Clipboard</button>
-          <button class="action-btn primary-btn" onclick="closeCodegenModal()">Done</button>
+          <div class="modal-footer-hint">
+            <span>💡</span> Paste directly into your <code class="inline-code">.kts</code> / <code class="inline-code">.kt</code> automations, or save to project.
+          </div>
+          <div class="modal-footer-actions">
+            <button class="action-btn secondary-btn" onclick="downloadCodegenFile()" title="Download file directly">
+              <span class="btn-icon">💾</span> Download .kt
+            </button>
+            <button class="action-btn secondary-btn" onclick="saveCodegenToDisk()" id="btn-save-codegen" title="Save to src/main/kotlin/io/homekotlin/generated/Entities.kt">
+              <span class="btn-icon">⚡</span> Save to Project
+            </button>
+            <button class="action-btn primary-btn" onclick="copyCodegen()" id="btn-modal-copy">
+              <span class="btn-icon">📋</span> Copy Code
+            </button>
+          </div>
         </div>
       </div>
     </div>

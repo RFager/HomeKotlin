@@ -410,35 +410,160 @@ async function reloadScripts() {
   }
 }
 
-// 6. Codegen Modal
-async function openCodegenModal() {
+// 6. Codegen Export Modal
+let currentExportStyle = 'objects';
+let currentExportDomain = '';
+
+async function openCodegenModal(domain = null) {
+  if (domain !== null && domain !== undefined) {
+    currentExportDomain = domain;
+  }
+  updateExportDomainPills();
+  updateExportStylePills();
+
   const modal = document.getElementById('codegen-modal');
   modal.classList.add('active');
+  await loadCodegen();
+}
+
+function setExportStyle(style) {
+  currentExportStyle = style;
+  updateExportStylePills();
+  loadCodegen();
+}
+
+function setExportDomain(domain) {
+  currentExportDomain = domain;
+  updateExportDomainPills();
+  loadCodegen();
+}
+
+function updateExportStylePills() {
+  ['objects', 'constants', 'typed'].forEach(s => {
+    const el = document.getElementById(`style-pill-${s}`);
+    if (el) {
+      if (s === currentExportStyle) el.classList.add('active');
+      else el.classList.remove('active');
+    }
+  });
+}
+
+function updateExportDomainPills() {
+  const container = document.getElementById('codegen-domain-pills');
+  if (!container) return;
+  const buttons = container.querySelectorAll('.pill-btn');
+  buttons.forEach(btn => {
+    const d = btn.id.replace('export-domain-', '');
+    const match = (d === 'all' && !currentExportDomain) || (d === currentExportDomain);
+    if (match) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+}
+
+async function loadCodegen() {
   const codeEl = document.getElementById('codegen-output');
-  codeEl.innerText = '// Fetching entities from Home Assistant and generating Kotlin DSL models...';
+  const statEl = document.getElementById('codegen-stat-summary');
+  codeEl.innerText = '// Fetching entities from Home Assistant and generating Kotlin definitions...';
+  if (statEl) statEl.innerText = 'Generating code...';
 
   try {
-    const res = await fetch(`${apiBase}/codegen`, { method: 'POST' });
+    const params = new URLSearchParams();
+    if (currentExportStyle) params.append('style', currentExportStyle);
+    if (currentExportDomain) params.append('domain', currentExportDomain);
+
+    const res = await fetch(`${apiBase}/codegen?${params.toString()}`);
     if (res.ok) {
       const data = await res.json();
       codeEl.innerText = data.code;
+      const lines = data.code.split('\n').length;
+      const countMatch = data.code.match(/Discovered entities: (\d+)/);
+      const entityCount = countMatch ? countMatch[1] : 'All';
+      if (statEl) {
+        const domainLabel = currentExportDomain ? `${currentExportDomain}` : 'All domains';
+        statEl.innerText = `⚡ ${entityCount} entities discovered • ${lines} lines generated (${domainLabel})`;
+      }
     } else {
-      codeEl.innerText = '// Error generating code';
+      codeEl.innerText = '// Error generating code from server';
+      if (statEl) statEl.innerText = 'Server error';
     }
   } catch (e) {
-    codeEl.innerText = '// Failed to connect to server';
+    codeEl.innerText = `// Failed to generate code: ${e.message}`;
+    if (statEl) statEl.innerText = 'Connection error';
   }
 }
 
 function closeCodegenModal(event) {
+  if (event && event.target && event.target.id !== 'codegen-modal' && !event.target.classList.contains('modal-close-btn')) {
+    return;
+  }
   document.getElementById('codegen-modal').classList.remove('active');
 }
 
 function copyCodegen() {
   const code = document.getElementById('codegen-output').innerText;
+  if (!code || code.startsWith('// Fetching') || code.startsWith('// Failed')) {
+    showToast('Notice', 'No generated code to copy yet', true);
+    return;
+  }
   navigator.clipboard.writeText(code).then(() => {
-    showToast('Copied', 'Entities.kt copied to clipboard!');
+    showToast('Copied', 'Kotlin code copied to clipboard!');
+  }).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = code;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showToast('Copied', 'Kotlin code copied to clipboard!');
   });
+}
+
+function downloadCodegenFile() {
+  const code = document.getElementById('codegen-output').innerText;
+  if (!code || code.startsWith('// Fetching') || code.startsWith('// Failed')) {
+    showToast('Notice', 'No generated code to download yet', true);
+    return;
+  }
+  const prefix = currentExportDomain ? (currentExportDomain.charAt(0).toUpperCase() + currentExportDomain.slice(1)) : '';
+  const filename = prefix ? `${prefix}Entities.kt` : 'Entities.kt';
+  const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Downloaded', `Saved as ${filename}`);
+}
+
+async function saveCodegenToDisk() {
+  const saveBtn = document.getElementById('btn-save-codegen');
+  const origHtml = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="btn-icon">⏳</span> Saving...';
+  }
+
+  try {
+    const res = await fetch(`${apiBase}/codegen/save?style=${encodeURIComponent(currentExportStyle)}`, {
+      method: 'POST'
+    });
+    if (res.ok) {
+      await res.json();
+      showToast('Saved to Project', 'Updated Entities.kt in workspace');
+    } else {
+      showToast('Save Failed', 'Server could not write Entities.kt', true);
+    }
+  } catch (e) {
+    showToast('Save Error', e.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = origHtml;
+    }
+  }
 }
 
 // Helpers

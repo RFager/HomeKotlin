@@ -1,6 +1,6 @@
 services:
   homekotlin:
-    build: .
+    build: ./homekotlin
     container_name: homekotlin
     restart: unless-stopped
     ports:

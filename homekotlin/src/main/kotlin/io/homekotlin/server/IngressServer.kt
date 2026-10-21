@@ -198,9 +198,31 @@ class IngressServer(
                         call.respond(mapOf("status" to "reloaded", "count" to scriptEngine.allScripts().size))
                     }
 
+                    get("/codegen") {
+                        val style = call.request.queryParameters["style"] ?: "objects"
+                        val domain = call.request.queryParameters["domain"]
+                        val code = codeGenerator.generateCode(style = style, domain = domain)
+                        call.respond(mapOf("code" to code, "style" to style, "domain" to (domain ?: "all")))
+                    }
+
                     post("/codegen") {
-                        val code = codeGenerator.generateCode()
-                        call.respond(mapOf("code" to code))
+                        val style = call.request.queryParameters["style"] ?: "objects"
+                        val domain = call.request.queryParameters["domain"]
+                        val code = codeGenerator.generateCode(style = style, domain = domain)
+                        call.respond(mapOf("code" to code, "style" to style, "domain" to (domain ?: "all")))
+                    }
+
+                    post("/codegen/save") {
+                        val style = call.request.queryParameters["style"] ?: "typed"
+                        val candidateFiles = listOf(
+                            java.io.File("homekotlin/src/main/kotlin/io/homekotlin/generated/Entities.kt"),
+                            java.io.File("src/main/kotlin/io/homekotlin/generated/Entities.kt")
+                        )
+                        val targetFile = candidateFiles.firstOrNull { it.parentFile.exists() }
+                            ?: java.io.File("homekotlin/src/main/kotlin/io/homekotlin/generated/Entities.kt")
+
+                        codeGenerator.generateToFile(targetFile, style = style)
+                        call.respond(mapOf("status" to "saved", "path" to targetFile.absolutePath))
                     }
 
                     get("/history") {

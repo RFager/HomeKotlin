@@ -5,6 +5,9 @@ import kotlin.time.Duration.Companion.minutes
 
 class PresenceLighting : HomeScript() {
     override fun configure() {
+        automation("Test") {
+            trigger.state("")
+        }
         automation("Porch Welcome & Auto-Off") {
             description("Turns on porch lights on motion, waits 3 minutes, then smoothly dims off")
 
