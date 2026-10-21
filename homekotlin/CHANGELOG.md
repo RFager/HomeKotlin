@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.2] - 2026-10-21
+### Removed
+- Removed deprecated `build.yaml` in favor of native multi-stage `Dockerfile`.
+
 ## [1.0.1] - 2026-10-21
 ### Fixed
 - Fixed self-contained multi-stage Docker build context and Gradle wrapper packaging for isolated Home Assistant supervisor builds.
