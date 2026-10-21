@@ -3,6 +3,10 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Duration.Companion.minutes
 
 class PresenceLightingAutomations : HomeScript() {
+    init {
+        configure()
+    }
+
     override fun configure() {
 
         automation("Porch Welcome & Auto-Off") {

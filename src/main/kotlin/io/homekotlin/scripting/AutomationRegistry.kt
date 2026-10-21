@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -14,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.system.measureTimeMillis
 
+@Serializable
 data class ExecutionLogEntry(
     val id: String = java.util.UUID.randomUUID().toString(),
     val automationId: String,

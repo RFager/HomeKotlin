@@ -3,6 +3,10 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Duration.Companion.minutes
 
 class WelcomeAutomations : HomeScript() {
+    init {
+        configure()
+    }
+
     override fun configure() {
 
         automation("Living Room Evening Motion") {

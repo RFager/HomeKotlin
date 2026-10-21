@@ -11,6 +11,9 @@ import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ScriptDiagnostic(
     val line: Int?,
     val column: Int?,
@@ -18,6 +21,7 @@ data class ScriptDiagnostic(
     val severity: String
 )
 
+@Serializable
 data class ScriptInfo(
     val filename: String,
     val path: String,
@@ -28,6 +32,7 @@ data class ScriptInfo(
     val lastLoadedAt: Long = System.currentTimeMillis()
 )
 
+@Serializable
 enum class ScriptStatus {
     LOADED,
     ERROR,
@@ -71,6 +76,7 @@ class ScriptEngine(
     fun loadFile(file: File) {
         val filename = file.name
         registry.unregisterBySource(filename)
+        HomeScript.currentScriptCapture.clear()
 
         try {
             logger.info("Compiling & evaluating script: $filename")
@@ -104,16 +110,44 @@ class ScriptEngine(
 
             when (result) {
                 is ResultWithDiagnostics.Success -> {
-                    val scriptValue = result.value.returnValue.scriptInstance
-                    var count = 0
+                    val returnVal = result.value.returnValue
+                    val evaluatedObj = (returnVal as? ResultValue.Value)?.value
+                    val scriptInstance = returnVal.scriptInstance
 
-                    if (scriptValue is HomeScript) {
-                        scriptValue.configure()
-                        for (a in scriptValue.registeredAutomations) {
-                            registry.register(a.copy(sourceFile = filename))
-                            count++
+                    val scriptTargets = mutableListOf<HomeScript>()
+                    if (evaluatedObj is HomeScript) scriptTargets.add(evaluatedObj)
+                    if (scriptInstance is HomeScript && !scriptTargets.contains(scriptInstance)) scriptTargets.add(scriptInstance)
+
+                    if (scriptInstance != null) {
+                        for (field in scriptInstance.javaClass.declaredFields) {
+                            try {
+                                field.isAccessible = true
+                                val obj = field.get(scriptInstance)
+                                if (obj is HomeScript && !scriptTargets.contains(obj)) {
+                                    scriptTargets.add(obj)
+                                }
+                            } catch (_: Exception) {}
                         }
                     }
+
+                    for (target in scriptTargets) {
+                        try {
+                            target.configure()
+                            for (a in target.registeredAutomations) {
+                                registry.register(a.copy(sourceFile = filename))
+                            }
+                        } catch (e: Exception) {
+                            logger.warn("configure() call failed on ${target::class.simpleName}: ${e.message}")
+                        }
+                    }
+
+                    // Also register any automations collected directly during script execution
+                    while (true) {
+                        val captured = HomeScript.currentScriptCapture.poll() ?: break
+                        registry.register(captured.copy(sourceFile = filename))
+                    }
+
+                    val count = registry.all().count { it.sourceFile == filename }
 
                     scriptStatusMap[filename] = ScriptInfo(
                         filename = filename,
