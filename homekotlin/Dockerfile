@@ -16,7 +16,7 @@ WORKDIR /app
 RUN apk add --no-cache bash jq curl
 
 COPY --from=builder /src/build/install/homekotlin/ /app/
-COPY homekotlin/run.sh /run.sh
+COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
 EXPOSE 8099

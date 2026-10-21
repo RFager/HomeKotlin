@@ -68,3 +68,4 @@ tasks.jar {
         attributes["Main-Class"] = "io.homekotlin.HomeKotlinAppKt"
     }
 }
+

@@ -1,8 +1,6 @@
 services:
   homekotlin:
-    build:
-      context: .
-      dockerfile: homekotlin/Dockerfile
+    build: .
     container_name: homekotlin
     restart: unless-stopped
     ports:
