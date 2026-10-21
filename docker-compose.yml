@@ -1,0 +1,16 @@
+services:
+  homekotlin:
+    build:
+      context: .
+      dockerfile: homekotlin/Dockerfile
+    container_name: homekotlin
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    environment:
+      - HA_URL=ws://homeassistant.local:8123/api/websocket
+      - HA_TOKEN=${HA_TOKEN:-}
+      - AUTOMATIONS_DIR=/automations
+      - DEMO_MODE=${DEMO_MODE:-false}
+    volumes:
+      - ./automations:/automations
