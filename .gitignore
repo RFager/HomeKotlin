@@ -1,6 +1,6 @@
 # Compiled binaries and libraries
 *.jar
-!gradle/wrapper/gradle-wrapper.jar
+!**/gradle-wrapper.jar
 *.war
 *.nar
 *.ear

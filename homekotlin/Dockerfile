@@ -4,6 +4,7 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /src
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties* ./
 COPY gradle/ gradle/
+RUN chmod +x ./gradlew
 RUN ./gradlew dependencies --no-daemon || true
 
 COPY src/ src/

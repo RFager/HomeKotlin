@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.1] - 2026-10-21
+### Fixed
+- Fixed self-contained multi-stage Docker build context and Gradle wrapper packaging for isolated Home Assistant supervisor builds.
+
 ## [1.0.0] - 2026-10-21
 ### Added
 - Initial release of HomeKotlin Add-on.
