@@ -113,3 +113,57 @@ data class WsEventData(
     @SerialName("old_state") val oldState: HaState? = null,
     @SerialName("new_state") val newState: HaState? = null
 )
+
+@Serializable
+data class HaServiceField(
+    val name: String? = null,
+    val description: String? = null,
+    val example: JsonElement? = null,
+    val required: Boolean = false
+)
+
+@Serializable
+data class HaServiceTarget(
+    val entity: JsonElement? = null,
+    val device: JsonElement? = null,
+    val area: JsonElement? = null
+)
+
+@Serializable
+data class HaServiceInfo(
+    val domain: String,
+    val service: String,
+    val name: String? = null,
+    val description: String? = null,
+    val fields: Map<String, HaServiceField> = emptyMap(),
+    val target: HaServiceTarget? = null
+) {
+    val serviceId: String get() = "$domain.$service"
+}
+
+@Serializable
+data class TriggerTypeInfo(
+    val type: String,
+    val displayName: String,
+    val description: String,
+    val exampleDsl: String,
+    val parameters: Map<String, String> = emptyMap()
+)
+
+@Serializable
+data class ActiveTriggerInfo(
+    val automationId: String,
+    val automationName: String,
+    val triggerType: String,
+    val description: String,
+    val enabled: Boolean
+)
+
+@Serializable
+data class TriggersCatalogDto(
+    val supportedTypes: List<TriggerTypeInfo>,
+    val activeTriggers: List<ActiveTriggerInfo>,
+    val totalActive: Int,
+    val totalEntitiesAvailableForStateTriggers: Int
+)
+

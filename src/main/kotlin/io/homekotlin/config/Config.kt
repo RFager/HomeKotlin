@@ -6,13 +6,13 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 
 data class AppConfig(
-    val haUrl: String,
-    val haToken: String,
-    val isSupervisor: Boolean,
-    val automationsDir: String,
-    val port: Int,
-    val logLevel: String,
-    val demoMode: Boolean
+    val haUrl: String = "ws://localhost:8123/api/websocket",
+    val haToken: String = "",
+    val isSupervisor: Boolean = false,
+    val automationsDir: String = "automations",
+    val port: Int = 8099,
+    val logLevel: String = "INFO",
+    val demoMode: Boolean = false
 ) {
     companion object {
         private val json = Json { ignoreUnknownKeys = true }

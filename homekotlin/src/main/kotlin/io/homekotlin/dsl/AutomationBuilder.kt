@@ -8,6 +8,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 data class Automation(
     val id: String,
@@ -46,12 +47,12 @@ class ActionContext(
         states["sun.sun"]?.state?.equals("above_horizon", ignoreCase = true) == true
 
     suspend fun delay(duration: Duration) {
-        kotlinx.coroutines.delay(duration.inWholeMilliseconds)
+        kotlinx.coroutines.delay(duration.inWholeMilliseconds.milliseconds)
     }
 
     suspend fun waitUntil(
         timeout: Duration,
-        checkInterval: Duration = kotlin.time.Duration.parse("500ms"),
+        checkInterval: Duration = Duration.parse("500ms"),
         condition: suspend () -> Boolean
     ): Boolean {
         return withTimeoutOrNull(timeout) {
@@ -78,8 +79,12 @@ class TriggerBuilder {
         triggers.add(IntervalTrigger(duration))
     }
 
-    fun time(time: String) {
-        triggers.add(TimeTrigger(time))
+    fun cron(expression: String) {
+        triggers.add(CronTrigger(expression))
+    }
+
+    fun time(timeOrCron: String) {
+        triggers.add(CronTrigger(CronExpression.normalize(timeOrCron)))
     }
 
     fun sun(event: String, offsetMinutes: Int = 0) {
@@ -106,7 +111,7 @@ class AutomationBuilder(val name: String, val id: String = name.toSlug()) {
     }
 
     fun build(sourceFile: String? = null): Automation {
-        val action = actionBlock ?: throw IllegalStateException("Automation '$name' must declare an action { ... } block")
+        val action = actionBlock ?: { /* no-op action for draft/logging */ }
         return Automation(
             id = id,
             name = name,

@@ -62,4 +62,30 @@ open class HomeScript {
             }
         }
     }
+
+    fun cron(
+        expression: String,
+        name: String = "Cron $expression",
+        action: suspend ActionContext.(Trigger) -> Unit
+    ): Automation {
+        return automation(name) {
+            trigger.cron(expression)
+            action {
+                action(trigger)
+            }
+        }
+    }
+
+    fun at(
+        timeOrCron: String,
+        name: String = "At $timeOrCron",
+        action: suspend ActionContext.(Trigger) -> Unit
+    ): Automation {
+        return automation(name) {
+            trigger.time(timeOrCron)
+            action {
+                action(trigger)
+            }
+        }
+    }
 }

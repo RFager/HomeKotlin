@@ -90,6 +90,10 @@
           <span class="tab-icon">📜</span> Scripts & Reload
           <span class="badge" id="badge-scripts-count">0</span>
         </button>
+        <button class="nav-tab" id="tab-btn-services" onclick="switchTab('services')">
+          <span class="tab-icon">🛠️</span> Services & Triggers
+          <span class="badge" id="badge-services-count">0</span>
+        </button>
       </div>
 
       <div class="nav-actions">
@@ -199,6 +203,53 @@
 
         <div class="scripts-list" id="scripts-container">
           <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- 5. Services & Triggers Explorer View -->
+      <section class="tab-panel" id="panel-services">
+        <div class="panel-header">
+          <div class="search-box">
+            <span class="search-icon">🔎</span>
+            <input type="text" id="service-search-input" placeholder="Search services (e.g. light.turn_on, notify, climate)..." oninput="filterServices()">
+          </div>
+          <div class="filter-group">
+            <select id="service-domain-filter" onchange="filterServices()" class="dropdown-filter">
+              <option value="">All Domains</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="services-triggers-layout">
+          <!-- Left Column: Home Assistant Services -->
+          <div class="services-column">
+            <div class="column-header">
+              <h3 class="subpanel-title">Home Assistant Services <span class="badge" id="services-badge-count">0</span></h3>
+              <span class="column-subtitle">Discovered callable services across all integrations</span>
+            </div>
+            <div class="services-list" id="services-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Right Column: Triggers Reference & Active Triggers -->
+          <div class="triggers-column">
+            <div class="column-header">
+              <h3 class="subpanel-title">Available Automation Triggers <span class="badge" id="triggers-badge-count">0</span></h3>
+              <span class="column-subtitle">Trigger types supported in your Kotlin scripts</span>
+            </div>
+            <div class="triggers-reference-list" id="triggers-reference-container">
+              <!-- Rendered via JS -->
+            </div>
+
+            <div class="column-header" style="margin-top: 28px;">
+              <h3 class="subpanel-title">Active Automation Triggers <span class="badge" id="active-triggers-badge-count">0</span></h3>
+              <span class="column-subtitle">Currently listening for events in running automations</span>
+            </div>
+            <div class="active-triggers-list" id="active-triggers-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
         </div>
       </section>
     </main>

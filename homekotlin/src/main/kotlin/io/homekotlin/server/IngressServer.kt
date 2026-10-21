@@ -6,6 +6,9 @@ import io.homekotlin.ha.HaClient
 import io.homekotlin.ha.HaStateStore
 import io.homekotlin.scripting.AutomationRegistry
 import io.homekotlin.scripting.ScriptEngine
+import io.homekotlin.dsl.TriggerCatalog
+import io.homekotlin.ha.ActiveTriggerInfo
+import io.homekotlin.ha.TriggersCatalogDto
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -202,6 +205,53 @@ class IngressServer(
 
                     get("/history") {
                         call.respond(registry.history())
+                    }
+
+                    get("/services") {
+                        val domain = call.request.queryParameters["domain"]
+                        val query = call.request.queryParameters["q"]?.lowercase()
+
+                        var services = haClient.getServices()
+                        if (!domain.isNullOrBlank()) {
+                            services = services.filter { it.domain.equals(domain, ignoreCase = true) }
+                        }
+                        if (!query.isNullOrBlank()) {
+                            services = services.filter {
+                                it.serviceId.lowercase().contains(query) ||
+                                (it.name?.lowercase()?.contains(query) == true) ||
+                                (it.description?.lowercase()?.contains(query) == true)
+                            }
+                        }
+                        call.respond(services)
+                    }
+
+                    get("/triggers") {
+                        val supported = TriggerCatalog.supportedTypes()
+                        val active = registry.all().flatMap { auto ->
+                            auto.triggers.map { t ->
+                                ActiveTriggerInfo(
+                                    automationId = auto.id,
+                                    automationName = auto.name,
+                                    triggerType = t::class.simpleName ?: "Trigger",
+                                    description = t.description,
+                                    enabled = auto.enabled
+                                )
+                            }
+                        }
+
+                        val dto = TriggersCatalogDto(
+                            supportedTypes = supported,
+                            activeTriggers = active,
+                            totalActive = active.size,
+                            totalEntitiesAvailableForStateTriggers = stateStore.count()
+                        )
+                        call.respond(dto)
+                    }
+
+                    get("/devices/{deviceId}/triggers") {
+                        val deviceId = call.parameters["deviceId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+                        val triggers = haClient.getDeviceTriggers(deviceId)
+                        call.respond(triggers)
                     }
 
                     // Real-time Server-Sent Events stream for live dashboard updates

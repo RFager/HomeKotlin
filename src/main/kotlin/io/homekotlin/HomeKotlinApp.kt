@@ -72,7 +72,8 @@ fun main(args: Array<String>) {
     // 1. Start Home Assistant Client
     haClient.start(appScope)
 
-    // 2. Load automation scripts from disk
+    // 2. Load compiled automations and dynamic scripts from disk
+    io.homekotlin.automations.CompiledAutomationLoader.loadAll(registry)
     scriptEngine.loadAll()
 
     // 3. Start script hot-reload file watcher

@@ -66,10 +66,22 @@ data class IntervalTrigger(
     override val description: String = "Every $interval"
 }
 
-data class TimeTrigger(
-    val time: String // e.g. "22:00" or "07:30"
+data class CronTrigger(
+    val expression: String // e.g. "0 7 * * 1-5" or "@daily"
 ) : Trigger {
-    override val description: String = "At $time"
+    val cron: CronExpression = CronExpression.parse(expression)
+    override val description: String = "Cron '$expression'"
+
+    fun matches(dateTime: java.time.LocalDateTime): Boolean = cron.matches(dateTime)
+}
+
+data class TimeTrigger(
+    val time: String // e.g. "22:00", "07:30", or full cron "0 7 * * 1-5"
+) : Trigger {
+    val cronTrigger: CronTrigger = CronTrigger(CronExpression.normalize(time))
+    override val description: String = if (time.contains(" ")) "Cron '$time'" else "At $time (cron: ${cronTrigger.expression})"
+
+    fun matches(dateTime: java.time.LocalDateTime): Boolean = cronTrigger.matches(dateTime)
 }
 
 data class SunTrigger(

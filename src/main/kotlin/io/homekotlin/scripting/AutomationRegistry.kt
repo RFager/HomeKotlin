@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
@@ -104,18 +105,37 @@ class AutomationRegistry {
         stateStore: HaStateStore,
         services: HaServices
     ) {
-        // Run periodic clock check for interval and time triggers
+        // Run periodic clock check for interval and cron/time triggers
         scope.launch {
             while (isActive) {
-                val nowTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
+                // Align timer check to the start of the next minute to avoid drift
+                val nowMillis = System.currentTimeMillis()
+                val nextMinuteMillis = ((nowMillis / 60_000) + 1) * 60_000
+                val delayMs = (nextMinuteMillis - nowMillis).coerceAtLeast(500)
+                delay(delayMs)
+
+                val now = LocalDateTime.now()
 
                 for (automation in automations.values) {
                     if (!automation.enabled) continue
 
                     for (trigger in automation.triggers) {
                         when (trigger) {
+                            is CronTrigger -> {
+                                if (trigger.matches(now)) {
+                                    launch {
+                                        executeAutomation(
+                                            automation = automation,
+                                            trigger = trigger,
+                                            triggerEvent = null,
+                                            stateStore = stateStore,
+                                            services = services
+                                        )
+                                    }
+                                }
+                            }
                             is TimeTrigger -> {
-                                if (trigger.time == nowTime) {
+                                if (trigger.matches(now)) {
                                     launch {
                                         executeAutomation(
                                             automation = automation,
@@ -149,7 +169,6 @@ class AutomationRegistry {
                         }
                     }
                 }
-                delay(60_000) // check every minute for time triggers
             }
         }
     }

@@ -22,7 +22,18 @@
 
 ## 🎨 Writing Automations
 
-Automations live in the `automations/` directory as `.kts` scripts or compiled Kotlin classes.
+HomeKotlin supports two ways to write automations:
+
+### A. Type-Safe Compiled Automations (Recommended for IDE Development)
+Write regular `.kt` files inside **`src/main/kotlin/io/homekotlin/automations/`** (e.g. [PresenceLighting.kt](file:///Users/rickard/Workspaces/HomeKotlin/src/main/kotlin/io/homekotlin/automations/PresenceLighting.kt)).
+- **Full IDE Support**: Autocomplete, parameter info, documentation, refactoring, and "Go to Definition" work out of the box with zero setup.
+- **Compile-Time Safety**: Checked and validated at build time (`./gradlew test`).
+- **Auto-Discovered**: Automatically detected and registered on startup by `CompiledAutomationLoader`.
+
+### B. Dynamic Hot-Reloading Scripts (`.kts`)
+Write `.kts` scripts in the **`automations/`** directory (or `/config/homekotlin/automations/` in Home Assistant).
+- **Hot Reloading**: Files are recompiled and reloaded automatically upon saving without restarting the server or container.
+- **Script Definition**: Backed by `HomeAutomationScript` template (`@KotlinScript`) with automatic imports for DSL and duration helpers.
 
 ### 1. Declarative Automation
 

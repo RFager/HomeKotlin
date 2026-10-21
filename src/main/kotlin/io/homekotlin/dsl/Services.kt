@@ -21,6 +21,15 @@ class HaServices(private val client: HaClient) {
     ): Boolean {
         return client.callService(domain, service, serviceData, target)
     }
+
+    suspend fun listServices(domain: String? = null): List<io.homekotlin.ha.HaServiceInfo> {
+        val all = client.getServices()
+        return if (domain != null) all.filter { it.domain.equals(domain, ignoreCase = true) } else all
+    }
+
+    fun listTriggerTypes(): List<io.homekotlin.ha.TriggerTypeInfo> {
+        return TriggerCatalog.supportedTypes()
+    }
 }
 
 class LightService(private val services: HaServices) {

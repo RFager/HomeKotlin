@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchAutomations();
   fetchEntities();
   fetchScripts();
+  fetchServices();
+  fetchTriggers();
   initEventStream();
 
   // Periodic polling for status/stats sync
@@ -466,3 +468,136 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// 6. Services & Triggers Explorer
+let servicesList = [];
+let triggersCatalog = null;
+
+async function fetchServices() {
+  try {
+    const res = await fetch(`${apiBase}/services`);
+    if (!res.ok) return;
+    servicesList = await res.json();
+    const countEl = document.getElementById('badge-services-count');
+    const badgeEl = document.getElementById('services-badge-count');
+    if (countEl) countEl.innerText = servicesList.length;
+    if (badgeEl) badgeEl.innerText = servicesList.length;
+
+    // Populate domain filter dropdown
+    const domains = [...new Set(servicesList.map(s => s.domain))].sort();
+    const select = document.getElementById('service-domain-filter');
+    if (select && select.children.length <= 1) {
+      select.innerHTML = '<option value="">All Domains</option>' +
+        domains.map(d => `<option value="${d}">${d} (${servicesList.filter(s => s.domain === d).length})</option>`).join('');
+    }
+
+    renderServices();
+  } catch (err) {
+    console.error('Failed to load services', err);
+  }
+}
+
+function renderServices() {
+  const container = document.getElementById('services-container');
+  if (!container) return;
+
+  const query = (document.getElementById('service-search-input')?.value || '').toLowerCase();
+  const domainFilter = document.getElementById('service-domain-filter')?.value || '';
+
+  const filtered = servicesList.filter(s => {
+    const matchesDomain = !domainFilter || s.domain === domainFilter;
+    const matchesQuery = !query ||
+      s.serviceId.toLowerCase().includes(query) ||
+      (s.name && s.name.toLowerCase().includes(query)) ||
+      (s.description && s.description.toLowerCase().includes(query));
+    return matchesDomain && matchesQuery;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 30px;">No services matching criteria</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(s => {
+    let fieldsHtml = '';
+    if (s.fields && Object.keys(s.fields).length > 0) {
+      const fieldItems = Object.entries(s.fields).map(([k, f]) => `
+        <div class="service-field-item">
+          <span class="field-name">${escapeHtml(k)}</span>
+          ${f.required ? '<span class="field-req">Required</span>' : ''}
+          <span class="field-desc">— ${escapeHtml(f.description || f.name || '')}</span>
+        </div>
+      `).join('');
+      fieldsHtml = `<div class="service-fields-list">${fieldItems}</div>`;
+    }
+
+    return `
+      <div class="service-card">
+        <div class="service-card-header">
+          <span class="service-name">${escapeHtml(s.name || s.service)}</span>
+          <span class="service-id">${escapeHtml(s.serviceId)}</span>
+        </div>
+        <div class="service-desc">${escapeHtml(s.description || 'No description available')}</div>
+        ${fieldsHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+function filterServices() {
+  renderServices();
+}
+
+async function fetchTriggers() {
+  try {
+    const res = await fetch(`${apiBase}/triggers`);
+    if (!res.ok) return;
+    triggersCatalog = await res.json();
+    const trigCountEl = document.getElementById('triggers-badge-count');
+    const actCountEl = document.getElementById('active-triggers-badge-count');
+    if (trigCountEl) trigCountEl.innerText = triggersCatalog.supportedTypes.length;
+    if (actCountEl) actCountEl.innerText = triggersCatalog.totalActive;
+
+    renderTriggers();
+  } catch (err) {
+    console.error('Failed to load triggers', err);
+  }
+}
+
+function renderTriggers() {
+  if (!triggersCatalog) return;
+
+  // Render Supported Types
+  const refContainer = document.getElementById('triggers-reference-container');
+  if (refContainer) {
+    refContainer.innerHTML = triggersCatalog.supportedTypes.map(t => `
+      <div class="trigger-type-card">
+        <div class="trigger-card-header">
+          <span class="trigger-name">${escapeHtml(t.displayName)}</span>
+          <span class="trigger-type-badge">${escapeHtml(t.type)}</span>
+        </div>
+        <div class="trigger-desc">${escapeHtml(t.description)}</div>
+        <pre class="trigger-code-example"><code>${escapeHtml(t.exampleDsl)}</code></pre>
+      </div>
+    `).join('');
+  }
+
+  // Render Active Triggers
+  const activeContainer = document.getElementById('active-triggers-container');
+  if (activeContainer) {
+    if (triggersCatalog.activeTriggers.length === 0) {
+      activeContainer.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 20px;">No active triggers running</div>`;
+    } else {
+      activeContainer.innerHTML = triggersCatalog.activeTriggers.map(at => `
+        <div class="active-trigger-card">
+          <div class="trigger-card-header">
+            <span class="trigger-name">${escapeHtml(at.automationName)}</span>
+            <span class="trigger-type-badge">${escapeHtml(at.triggerType)}</span>
+          </div>
+          <div class="trigger-desc">⚡ ${escapeHtml(at.description)}</div>
+        </div>
+      `).join('');
+    }
+  }
+}
+

@@ -1,7 +1,14 @@
 plugins {
+    idea
     kotlin("jvm") version "2.0.21"
     kotlin("plugin.serialization") version "2.0.21"
     application
+}
+
+idea {
+    module {
+        excludeDirs.add(file("homekotlin"))
+    }
 }
 
 group = "io.homekotlin"
