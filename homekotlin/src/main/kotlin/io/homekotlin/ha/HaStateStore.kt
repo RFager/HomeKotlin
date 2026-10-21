@@ -10,18 +10,18 @@ class HaStateStore {
     private val _events = MutableSharedFlow<StateChangeEvent>(extraBufferCapacity = 1000)
     val events: SharedFlow<StateChangeEvent> = _events.asSharedFlow()
 
-    operator fun get(entityId: String): HaState? = states[entityId]
+    operator fun get(entityId: CharSequence): HaState? = states[entityId.toString()]
 
-    fun getState(entityId: String): HaState? = states[entityId]
+    fun getState(entityId: CharSequence): HaState? = states[entityId.toString()]
 
-    fun getString(entityId: String): String? = states[entityId]?.state
+    fun getString(entityId: CharSequence): String? = states[entityId.toString()]?.state
 
-    fun getNumber(entityId: String): Double? = states[entityId]?.doubleValue()
+    fun getNumber(entityId: CharSequence): Double? = states[entityId.toString()]?.doubleValue()
 
-    fun getBoolean(entityId: String): Boolean? = states[entityId]?.booleanValue()
+    fun getBoolean(entityId: CharSequence): Boolean? = states[entityId.toString()]?.booleanValue()
 
-    fun isState(entityId: String, expectedState: String): Boolean {
-        return states[entityId]?.state?.equals(expectedState, ignoreCase = true) == true
+    fun isState(entityId: CharSequence, expectedState: String): Boolean {
+        return states[entityId.toString()]?.state?.equals(expectedState, ignoreCase = true) == true
     }
 
     fun allStates(): Map<String, HaState> = HashMap(states)

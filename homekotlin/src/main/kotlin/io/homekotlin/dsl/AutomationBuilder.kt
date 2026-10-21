@@ -35,10 +35,23 @@ class ActionContext(
 ) {
     val log: Logger = LoggerFactory.getLogger("Automation[${automation.name}]")
 
-    fun state(entityId: String): HaState? = states[entityId]
+    fun state(entityId: CharSequence): HaState? = states[entityId.toString()]
 
-    fun isState(entityId: String, expected: String): Boolean =
-        states.isState(entityId, expected)
+    fun isState(entityId: CharSequence, expected: String): Boolean =
+        states.isState(entityId.toString(), expected)
+
+    @JvmName("entityState")
+    fun CharSequence.state(): HaState? = states[this.toString()]
+
+    @JvmName("entityIsState")
+    fun CharSequence.isState(expected: String): Boolean =
+        states.isState(this.toString(), expected)
+
+    val CharSequence.isOn: Boolean
+        get() = states.isState(this.toString(), "on")
+
+    val CharSequence.isOff: Boolean
+        get() = states.isState(this.toString(), "off")
 
     fun isSunBelowHorizon(): Boolean =
         states["sun.sun"]?.state?.equals("below_horizon", ignoreCase = true) == true
@@ -67,12 +80,12 @@ class ActionContext(
 class TriggerBuilder {
     internal val triggers = mutableListOf<Trigger>()
 
-    fun state(entityId: String, from: String? = null, to: String? = null) {
-        triggers.add(StateTrigger(entityId = entityId, from = from, to = to))
+    fun state(entityId: CharSequence, from: String? = null, to: String? = null) {
+        triggers.add(StateTrigger(entityId = entityId.toString(), from = from, to = to))
     }
 
-    fun numeric(entityId: String, above: Double? = null, below: Double? = null) {
-        triggers.add(NumericStateTrigger(entityId = entityId, above = above, below = below))
+    fun numeric(entityId: CharSequence, above: Double? = null, below: Double? = null) {
+        triggers.add(NumericStateTrigger(entityId = entityId.toString(), above = above, below = below))
     }
 
     fun interval(duration: Duration) {

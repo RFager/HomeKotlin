@@ -21,7 +21,7 @@ open class HomeScript {
     }
 
     fun listenState(
-        entityId: String,
+        entityId: CharSequence,
         from: String? = null,
         to: String? = null,
         name: String = "Listen $entityId" + if (to != null) " -> $to" else "",
@@ -36,7 +36,7 @@ open class HomeScript {
     }
 
     fun numericState(
-        entityId: String,
+        entityId: CharSequence,
         above: Double? = null,
         below: Double? = null,
         name: String = "Numeric $entityId" + (if (above != null) " > $above" else "") + (if (below != null) " < $below" else ""),

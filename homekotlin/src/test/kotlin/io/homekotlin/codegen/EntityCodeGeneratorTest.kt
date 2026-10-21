@@ -80,8 +80,15 @@ class EntityCodeGeneratorTest {
         val code = generator.generateCode(style = "typed")
 
         assertTrue(code.contains("open class Entity(val entityId: String) : CharSequence by entityId"))
-        assertTrue(code.contains("class LightEntity(entityId: String) : Entity(entityId)"))
-        assertTrue(code.contains("class SwitchEntity(entityId: String) : Entity(entityId)"))
+        assertTrue(code.contains("open class LightEntity(entityId: String) : Entity(entityId)"))
+        assertTrue(code.contains("val ON get() = \"on\""))
+        assertTrue(code.contains("val OFF get() = \"off\""))
+        assertTrue(code.contains("open class BinarySensorEntity(entityId: String) : Entity(entityId)"))
+        assertTrue(code.contains("val OPEN get() = \"on\""))
+        assertTrue(code.contains("val CLOSED get() = \"off\""))
+        assertTrue(code.contains("val DETECTED get() = \"on\""))
+        assertTrue(code.contains("val CLEAR get() = \"off\""))
+        assertTrue(code.contains("open class SwitchEntity(entityId: String) : Entity(entityId)"))
         assertTrue(code.contains("object Entities {"))
         assertTrue(code.contains("object Light {"))
         assertTrue(code.contains("val porch = LightEntity(\"light.porch\")"))
@@ -109,16 +116,30 @@ class EntityCodeGeneratorTest {
     }
 
     @Test
-    fun `test generateToFile writes valid file`() {
-        val tempFile = File.createTempFile("GeneratedEntitiesTest", ".kt")
-        try {
-            val file = generator.generateToFile(tempFile, style = "objects", domain = "light")
-            assertTrue(file.exists())
-            val content = file.readText()
-            assertTrue(content.contains("object Lights {"))
-            assertTrue(content.contains("PORCH"))
-        } finally {
-            tempFile.delete()
-        }
+    fun `test dynamic options generated for select entity`() {
+        stateStore.bulkUpdate(
+            listOf(
+                HaState(
+                    entityId = "select.waste_bin",
+                    state = "Bin 1",
+                    attributes = buildJsonObject {
+                        put("friendly_name", "Waste Bin Selector")
+                        put("options", kotlinx.serialization.json.buildJsonArray {
+                            add(kotlinx.serialization.json.JsonPrimitive("Bin 1"))
+                            add(kotlinx.serialization.json.JsonPrimitive("Bin 2"))
+                            add(kotlinx.serialization.json.JsonPrimitive("Garden Waste"))
+                        })
+                    }
+                )
+            )
+        )
+
+        val code = generator.generateCode(style = "typed")
+        assertTrue(code.contains("object Select {"))
+        assertTrue(code.contains("val wasteBin = object : SelectEntity(\"select.waste_bin\") {"))
+        assertTrue(code.contains("val BIN_1 = \"Bin 1\""))
+        assertTrue(code.contains("val BIN_2 = \"Bin 2\""))
+        assertTrue(code.contains("val GARDEN_WASTE = \"Garden Waste\""))
+        assertTrue(code.contains("val options = listOf(\"Bin 1\", \"Bin 2\", \"Garden Waste\")"))
     }
 }

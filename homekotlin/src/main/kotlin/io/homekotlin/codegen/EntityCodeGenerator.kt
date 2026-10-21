@@ -2,6 +2,8 @@ package io.homekotlin.codegen
 
 import io.homekotlin.ha.HaState
 import io.homekotlin.ha.HaStateStore
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import java.io.File
 import java.time.Instant
 
@@ -32,9 +34,124 @@ class EntityCodeGenerator(private val stateStore: HaStateStore) {
         sb.appendLine("// Copy & paste these objects directly into your automation files:")
         sb.appendLine()
 
+        // Global common states object
+        sb.appendLine("object States {")
+        sb.appendLine("    const val ON = \"on\"")
+        sb.appendLine("    const val OFF = \"off\"")
+        sb.appendLine("    const val OPEN = \"open\"")
+        sb.appendLine("    const val CLOSED = \"closed\"")
+        sb.appendLine("    const val DETECTED = \"on\"")
+        sb.appendLine("    const val CLEAR = \"off\"")
+        sb.appendLine("    const val WET = \"on\"")
+        sb.appendLine("    const val DRY = \"off\"")
+        sb.appendLine("    const val HEAT = \"heat\"")
+        sb.appendLine("    const val COOL = \"cool\"")
+        sb.appendLine("    const val AUTO = \"auto\"")
+        sb.appendLine("    const val HOME = \"home\"")
+        sb.appendLine("    const val NOT_HOME = \"not_home\"")
+        sb.appendLine("    const val DOCKED = \"docked\"")
+        sb.appendLine("    const val CLEANING = \"cleaning\"")
+        sb.appendLine("    const val MOWING = \"mowing\"")
+        sb.appendLine("    const val PLAYING = \"playing\"")
+        sb.appendLine("    const val PAUSED = \"paused\"")
+        sb.appendLine("    const val IDLE = \"idle\"")
+        sb.appendLine("    const val LOCKED = \"locked\"")
+        sb.appendLine("    const val UNLOCKED = \"unlocked\"")
+        sb.appendLine("    const val ABOVE_HORIZON = \"above_horizon\"")
+        sb.appendLine("    const val BELOW_HORIZON = \"below_horizon\"")
+        sb.appendLine("    const val UNAVAILABLE = \"unavailable\"")
+        sb.appendLine("    const val UNKNOWN = \"unknown\"")
+        sb.appendLine("}")
+        sb.appendLine()
+
         for ((domain, list) in byDomain.toSortedMap()) {
             val objectName = domain.toDomainObjectName()
             sb.appendLine("object $objectName {")
+
+            // Domain-specific state constants
+            when (domain.lowercase()) {
+                "light", "switch", "input_boolean", "automation" -> {
+                    sb.appendLine("    const val STATE_ON = \"on\"")
+                    sb.appendLine("    const val STATE_OFF = \"off\"")
+                    sb.appendLine("    const val STATE_UNAVAILABLE = \"unavailable\"")
+                    sb.appendLine()
+                }
+                "binary_sensor" -> {
+                    sb.appendLine("    const val STATE_ON = \"on\"")
+                    sb.appendLine("    const val STATE_OFF = \"off\"")
+                    sb.appendLine("    const val STATE_OPEN = \"on\"")
+                    sb.appendLine("    const val STATE_CLOSED = \"off\"")
+                    sb.appendLine("    const val STATE_DETECTED = \"on\"")
+                    sb.appendLine("    const val STATE_CLEAR = \"off\"")
+                    sb.appendLine("    const val STATE_WET = \"on\"")
+                    sb.appendLine("    const val STATE_DRY = \"off\"")
+                    sb.appendLine("    const val STATE_UNAVAILABLE = \"unavailable\"")
+                    sb.appendLine()
+                }
+                "climate" -> {
+                    sb.appendLine("    const val STATE_OFF = \"off\"")
+                    sb.appendLine("    const val STATE_HEAT = \"heat\"")
+                    sb.appendLine("    const val STATE_COOL = \"cool\"")
+                    sb.appendLine("    const val STATE_HEAT_COOL = \"heat_cool\"")
+                    sb.appendLine("    const val STATE_AUTO = \"auto\"")
+                    sb.appendLine("    const val STATE_DRY = \"dry\"")
+                    sb.appendLine("    const val STATE_FAN_ONLY = \"fan_only\"")
+                    sb.appendLine("    const val STATE_UNAVAILABLE = \"unavailable\"")
+                    sb.appendLine()
+                }
+                "cover" -> {
+                    sb.appendLine("    const val STATE_OPEN = \"open\"")
+                    sb.appendLine("    const val STATE_CLOSED = \"closed\"")
+                    sb.appendLine("    const val STATE_OPENING = \"opening\"")
+                    sb.appendLine("    const val STATE_CLOSING = \"closing\"")
+                    sb.appendLine("    const val STATE_STOPPED = \"stopped\"")
+                    sb.appendLine("    const val STATE_UNAVAILABLE = \"unavailable\"")
+                    sb.appendLine()
+                }
+                "media_player" -> {
+                    sb.appendLine("    const val STATE_OFF = \"off\"")
+                    sb.appendLine("    const val STATE_ON = \"on\"")
+                    sb.appendLine("    const val STATE_IDLE = \"idle\"")
+                    sb.appendLine("    const val STATE_PLAYING = \"playing\"")
+                    sb.appendLine("    const val STATE_PAUSED = \"paused\"")
+                    sb.appendLine("    const val STATE_STANDBY = \"standby\"")
+                    sb.appendLine("    const val STATE_BUFFERING = \"buffering\"")
+                    sb.appendLine()
+                }
+                "lawn_mower" -> {
+                    sb.appendLine("    const val STATE_DOCKED = \"docked\"")
+                    sb.appendLine("    const val STATE_MOWING = \"mowing\"")
+                    sb.appendLine("    const val STATE_PAUSED = \"paused\"")
+                    sb.appendLine("    const val STATE_ERROR = \"error\"")
+                    sb.appendLine()
+                }
+                "vacuum" -> {
+                    sb.appendLine("    const val STATE_CLEANING = \"cleaning\"")
+                    sb.appendLine("    const val STATE_DOCKED = \"docked\"")
+                    sb.appendLine("    const val STATE_IDLE = \"idle\"")
+                    sb.appendLine("    const val STATE_PAUSED = \"paused\"")
+                    sb.appendLine("    const val STATE_RETURNING = \"returning\"")
+                    sb.appendLine("    const val STATE_ERROR = \"error\"")
+                    sb.appendLine()
+                }
+                "lock" -> {
+                    sb.appendLine("    const val STATE_LOCKED = \"locked\"")
+                    sb.appendLine("    const val STATE_UNLOCKED = \"unlocked\"")
+                    sb.appendLine("    const val STATE_JAMMED = \"jammed\"")
+                    sb.appendLine()
+                }
+                "person", "device_tracker" -> {
+                    sb.appendLine("    const val STATE_HOME = \"home\"")
+                    sb.appendLine("    const val STATE_NOT_HOME = \"not_home\"")
+                    sb.appendLine()
+                }
+                "sun" -> {
+                    sb.appendLine("    const val STATE_ABOVE_HORIZON = \"above_horizon\"")
+                    sb.appendLine("    const val STATE_BELOW_HORIZON = \"below_horizon\"")
+                    sb.appendLine()
+                }
+            }
+
             for (item in list) {
                 val constName = item.objectId.toConstantName()
                 val friendlyComment = item.friendlyName.replace("\n", " ").trim()
@@ -74,40 +191,394 @@ class EntityCodeGenerator(private val stateStore: HaStateStore) {
         sb.appendLine("// Auto-generated by HomeKotlin at ${Instant.now()}")
         sb.appendLine("// Discovered entities: $totalCount")
         sb.appendLine()
+
+        // Base Entity class
         sb.appendLine("open class Entity(val entityId: String) : CharSequence by entityId {")
         sb.appendLine("    override fun toString(): String = entityId")
+        sb.appendLine("    val UNAVAILABLE get() = \"unavailable\"")
+        sb.appendLine("    val UNKNOWN get() = \"unknown\"")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val UNAVAILABLE = \"unavailable\"")
+        sb.appendLine("        const val UNKNOWN = \"unknown\"")
+        sb.appendLine("    }")
         sb.appendLine("}")
         sb.appendLine()
-        sb.appendLine("class LightEntity(entityId: String) : Entity(entityId)")
-        sb.appendLine("class SwitchEntity(entityId: String) : Entity(entityId)")
-        sb.appendLine("class SensorEntity(entityId: String) : Entity(entityId)")
-        sb.appendLine("class BinarySensorEntity(entityId: String) : Entity(entityId)")
-        sb.appendLine("class ClimateEntity(entityId: String) : Entity(entityId)")
-        sb.appendLine("class CoverEntity(entityId: String) : Entity(entityId)")
-        sb.appendLine("class MediaPlayerEntity(entityId: String) : Entity(entityId)")
-        sb.appendLine("class GenericEntity(entityId: String) : Entity(entityId)")
+
+        // LightEntity
+        sb.appendLine("open class LightEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val ON get() = \"on\"")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val ON = \"on\"")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        val ALL_STATES = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
         sb.appendLine()
+
+        // SwitchEntity
+        sb.appendLine("open class SwitchEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val ON get() = \"on\"")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val ON = \"on\"")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        val ALL_STATES = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // BinarySensorEntity
+        sb.appendLine("open class BinarySensorEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val ON get() = \"on\"")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val OPEN get() = \"on\"")
+        sb.appendLine("    val CLOSED get() = \"off\"")
+        sb.appendLine("    val DETECTED get() = \"on\"")
+        sb.appendLine("    val CLEAR get() = \"off\"")
+        sb.appendLine("    val MOTION get() = \"on\"")
+        sb.appendLine("    val NO_MOTION get() = \"off\"")
+        sb.appendLine("    val WET get() = \"on\"")
+        sb.appendLine("    val DRY get() = \"off\"")
+        sb.appendLine("    val CONNECTED get() = \"on\"")
+        sb.appendLine("    val DISCONNECTED get() = \"off\"")
+        sb.appendLine("    val OCCUPIED get() = \"on\"")
+        sb.appendLine("    val UNOCCUPIED get() = \"off\"")
+        sb.appendLine("    val PROBLEM get() = \"on\"")
+        sb.appendLine("    val OK get() = \"off\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val ON = \"on\"")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        const val OPEN = \"on\"")
+        sb.appendLine("        const val CLOSED = \"off\"")
+        sb.appendLine("        const val DETECTED = \"on\"")
+        sb.appendLine("        const val CLEAR = \"off\"")
+        sb.appendLine("        const val MOTION = \"on\"")
+        sb.appendLine("        const val NO_MOTION = \"off\"")
+        sb.appendLine("        const val WET = \"on\"")
+        sb.appendLine("        const val DRY = \"off\"")
+        sb.appendLine("        const val CONNECTED = \"on\"")
+        sb.appendLine("        const val DISCONNECTED = \"off\"")
+        sb.appendLine("        const val OCCUPIED = \"on\"")
+        sb.appendLine("        const val UNOCCUPIED = \"off\"")
+        sb.appendLine("        const val PROBLEM = \"on\"")
+        sb.appendLine("        const val OK = \"off\"")
+        sb.appendLine("        val ALL_STATES = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // ClimateEntity
+        sb.appendLine("open class ClimateEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val HEAT get() = \"heat\"")
+        sb.appendLine("    val COOL get() = \"cool\"")
+        sb.appendLine("    val HEAT_COOL get() = \"heat_cool\"")
+        sb.appendLine("    val AUTO get() = \"auto\"")
+        sb.appendLine("    val DRY get() = \"dry\"")
+        sb.appendLine("    val FAN_ONLY get() = \"fan_only\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(OFF, HEAT, COOL, HEAT_COOL, AUTO, DRY, FAN_ONLY, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        const val HEAT = \"heat\"")
+        sb.appendLine("        const val COOL = \"cool\"")
+        sb.appendLine("        const val HEAT_COOL = \"heat_cool\"")
+        sb.appendLine("        const val AUTO = \"auto\"")
+        sb.appendLine("        const val DRY = \"dry\"")
+        sb.appendLine("        const val FAN_ONLY = \"fan_only\"")
+        sb.appendLine("        val ALL_STATES = listOf(OFF, HEAT, COOL, HEAT_COOL, AUTO, DRY, FAN_ONLY, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // CoverEntity
+        sb.appendLine("open class CoverEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val OPEN get() = \"open\"")
+        sb.appendLine("    val CLOSED get() = \"closed\"")
+        sb.appendLine("    val OPENING get() = \"opening\"")
+        sb.appendLine("    val CLOSING get() = \"closing\"")
+        sb.appendLine("    val STOPPED get() = \"stopped\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(OPEN, CLOSED, OPENING, CLOSING, STOPPED, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val OPEN = \"open\"")
+        sb.appendLine("        const val CLOSED = \"closed\"")
+        sb.appendLine("        const val OPENING = \"opening\"")
+        sb.appendLine("        const val CLOSING = \"closing\"")
+        sb.appendLine("        const val STOPPED = \"stopped\"")
+        sb.appendLine("        val ALL_STATES = listOf(OPEN, CLOSED, OPENING, CLOSING, STOPPED, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // MediaPlayerEntity
+        sb.appendLine("open class MediaPlayerEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val ON get() = \"on\"")
+        sb.appendLine("    val IDLE get() = \"idle\"")
+        sb.appendLine("    val PLAYING get() = \"playing\"")
+        sb.appendLine("    val PAUSED get() = \"paused\"")
+        sb.appendLine("    val STANDBY get() = \"standby\"")
+        sb.appendLine("    val BUFFERING get() = \"buffering\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(OFF, ON, IDLE, PLAYING, PAUSED, STANDBY, BUFFERING, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        const val ON = \"on\"")
+        sb.appendLine("        const val IDLE = \"idle\"")
+        sb.appendLine("        const val PLAYING = \"playing\"")
+        sb.appendLine("        const val PAUSED = \"paused\"")
+        sb.appendLine("        const val STANDBY = \"standby\"")
+        sb.appendLine("        const val BUFFERING = \"buffering\"")
+        sb.appendLine("        val ALL_STATES = listOf(OFF, ON, IDLE, PLAYING, PAUSED, STANDBY, BUFFERING, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // VacuumEntity
+        sb.appendLine("open class VacuumEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val CLEANING get() = \"cleaning\"")
+        sb.appendLine("    val DOCKED get() = \"docked\"")
+        sb.appendLine("    val IDLE get() = \"idle\"")
+        sb.appendLine("    val PAUSED get() = \"paused\"")
+        sb.appendLine("    val RETURNING get() = \"returning\"")
+        sb.appendLine("    val ERROR get() = \"error\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(CLEANING, DOCKED, IDLE, PAUSED, RETURNING, ERROR, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val CLEANING = \"cleaning\"")
+        sb.appendLine("        const val DOCKED = \"docked\"")
+        sb.appendLine("        const val IDLE = \"idle\"")
+        sb.appendLine("        const val PAUSED = \"paused\"")
+        sb.appendLine("        const val RETURNING = \"returning\"")
+        sb.appendLine("        const val ERROR = \"error\"")
+        sb.appendLine("        val ALL_STATES = listOf(CLEANING, DOCKED, IDLE, PAUSED, RETURNING, ERROR, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // LawnMowerEntity
+        sb.appendLine("open class LawnMowerEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val DOCKED get() = \"docked\"")
+        sb.appendLine("    val MOWING get() = \"mowing\"")
+        sb.appendLine("    val PAUSED get() = \"paused\"")
+        sb.appendLine("    val ERROR get() = \"error\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(DOCKED, MOWING, PAUSED, ERROR, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val DOCKED = \"docked\"")
+        sb.appendLine("        const val MOWING = \"mowing\"")
+        sb.appendLine("        const val PAUSED = \"paused\"")
+        sb.appendLine("        const val ERROR = \"error\"")
+        sb.appendLine("        val ALL_STATES = listOf(DOCKED, MOWING, PAUSED, ERROR, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // LockEntity
+        sb.appendLine("open class LockEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val LOCKED get() = \"locked\"")
+        sb.appendLine("    val UNLOCKED get() = \"unlocked\"")
+        sb.appendLine("    val LOCKING get() = \"locking\"")
+        sb.appendLine("    val UNLOCKING get() = \"unlocking\"")
+        sb.appendLine("    val JAMMED get() = \"jammed\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(LOCKED, UNLOCKED, LOCKING, UNLOCKING, JAMMED, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val LOCKED = \"locked\"")
+        sb.appendLine("        const val UNLOCKED = \"unlocked\"")
+        sb.appendLine("        const val LOCKING = \"locking\"")
+        sb.appendLine("        const val UNLOCKING = \"unlocking\"")
+        sb.appendLine("        const val JAMMED = \"jammed\"")
+        sb.appendLine("        val ALL_STATES = listOf(LOCKED, UNLOCKED, LOCKING, UNLOCKING, JAMMED, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // AlarmControlPanelEntity
+        sb.appendLine("open class AlarmControlPanelEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val DISARMED get() = \"disarmed\"")
+        sb.appendLine("    val ARMED_HOME get() = \"armed_home\"")
+        sb.appendLine("    val ARMED_AWAY get() = \"armed_away\"")
+        sb.appendLine("    val ARMED_NIGHT get() = \"armed_night\"")
+        sb.appendLine("    val ARMED_VACATION get() = \"armed_vacation\"")
+        sb.appendLine("    val ARMING get() = \"arming\"")
+        sb.appendLine("    val DISARMING get() = \"disarming\"")
+        sb.appendLine("    val PENDING get() = \"pending\"")
+        sb.appendLine("    val TRIGGERED get() = \"triggered\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(DISARMED, ARMED_HOME, ARMED_AWAY, ARMED_NIGHT, ARMED_VACATION, ARMING, DISARMING, PENDING, TRIGGERED, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val DISARMED = \"disarmed\"")
+        sb.appendLine("        const val ARMED_HOME = \"armed_home\"")
+        sb.appendLine("        const val ARMED_AWAY = \"armed_away\"")
+        sb.appendLine("        const val ARMED_NIGHT = \"armed_night\"")
+        sb.appendLine("        const val ARMED_VACATION = \"armed_vacation\"")
+        sb.appendLine("        const val ARMING = \"arming\"")
+        sb.appendLine("        const val DISARMING = \"disarming\"")
+        sb.appendLine("        const val PENDING = \"pending\"")
+        sb.appendLine("        const val TRIGGERED = \"triggered\"")
+        sb.appendLine("        val ALL_STATES = listOf(DISARMED, ARMED_HOME, ARMED_AWAY, ARMED_NIGHT, ARMED_VACATION, ARMING, DISARMING, PENDING, TRIGGERED, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // Person & DeviceTracker
+        sb.appendLine("open class PersonEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val HOME get() = \"home\"")
+        sb.appendLine("    val NOT_HOME get() = \"not_home\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(HOME, NOT_HOME, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val HOME = \"home\"")
+        sb.appendLine("        const val NOT_HOME = \"not_home\"")
+        sb.appendLine("        val ALL_STATES = listOf(HOME, NOT_HOME, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        sb.appendLine("open class DeviceTrackerEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val HOME get() = \"home\"")
+        sb.appendLine("    val NOT_HOME get() = \"not_home\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(HOME, NOT_HOME, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val HOME = \"home\"")
+        sb.appendLine("        const val NOT_HOME = \"not_home\"")
+        sb.appendLine("        val ALL_STATES = listOf(HOME, NOT_HOME, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // SunEntity
+        sb.appendLine("open class SunEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val ABOVE_HORIZON get() = \"above_horizon\"")
+        sb.appendLine("    val BELOW_HORIZON get() = \"below_horizon\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(ABOVE_HORIZON, BELOW_HORIZON, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val ABOVE_HORIZON = \"above_horizon\"")
+        sb.appendLine("        const val BELOW_HORIZON = \"below_horizon\"")
+        sb.appendLine("        val ALL_STATES = listOf(ABOVE_HORIZON, BELOW_HORIZON, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // WeatherEntity
+        sb.appendLine("open class WeatherEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val CLEAR_NIGHT get() = \"clear-night\"")
+        sb.appendLine("    val CLOUDY get() = \"cloudy\"")
+        sb.appendLine("    val FOG get() = \"fog\"")
+        sb.appendLine("    val HAIL get() = \"hail\"")
+        sb.appendLine("    val LIGHTNING get() = \"lightning\"")
+        sb.appendLine("    val LIGHTNING_RAINY get() = \"lightning-rainy\"")
+        sb.appendLine("    val PARTLY_CLOUDY get() = \"partlycloudy\"")
+        sb.appendLine("    val POURING get() = \"pouring\"")
+        sb.appendLine("    val RAINY get() = \"rainy\"")
+        sb.appendLine("    val SNOWY get() = \"snowy\"")
+        sb.appendLine("    val SNOWY_RAINY get() = \"snowy-rainy\"")
+        sb.appendLine("    val SUNNY get() = \"sunny\"")
+        sb.appendLine("    val WINDY get() = \"windy\"")
+        sb.appendLine("    val WINDY_VARIANT get() = \"windy-variant\"")
+        sb.appendLine("    val EXCEPTIONAL get() = \"exceptional\"")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val CLEAR_NIGHT = \"clear-night\"")
+        sb.appendLine("        const val CLOUDY = \"cloudy\"")
+        sb.appendLine("        const val FOG = \"fog\"")
+        sb.appendLine("        const val HAIL = \"hail\"")
+        sb.appendLine("        const val LIGHTNING = \"lightning\"")
+        sb.appendLine("        const val LIGHTNING_RAINY = \"lightning-rainy\"")
+        sb.appendLine("        const val PARTLY_CLOUDY = \"partlycloudy\"")
+        sb.appendLine("        const val POURING = \"pouring\"")
+        sb.appendLine("        const val RAINY = \"rainy\"")
+        sb.appendLine("        const val SNOWY = \"snowy\"")
+        sb.appendLine("        const val SNOWY_RAINY = \"snowy-rainy\"")
+        sb.appendLine("        const val SUNNY = \"sunny\"")
+        sb.appendLine("        const val WINDY = \"windy\"")
+        sb.appendLine("        const val WINDY_VARIANT = \"windy-variant\"")
+        sb.appendLine("        const val EXCEPTIONAL = \"exceptional\"")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // InputBooleanEntity
+        sb.appendLine("open class InputBooleanEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val ON get() = \"on\"")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val ON = \"on\"")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        val ALL_STATES = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // UpdateEntity
+        sb.appendLine("open class UpdateEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val ON get() = \"on\"")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val UPDATE_AVAILABLE get() = \"on\"")
+        sb.appendLine("    val UP_TO_DATE get() = \"off\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val ON = \"on\"")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        const val UPDATE_AVAILABLE = \"on\"")
+        sb.appendLine("        const val UP_TO_DATE = \"off\"")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // AutomationEntity
+        sb.appendLine("open class AutomationEntity(entityId: String) : Entity(entityId) {")
+        sb.appendLine("    val ON get() = \"on\"")
+        sb.appendLine("    val OFF get() = \"off\"")
+        sb.appendLine("    val availableStates: List<String> = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    companion object {")
+        sb.appendLine("        const val ON = \"on\"")
+        sb.appendLine("        const val OFF = \"off\"")
+        sb.appendLine("        val ALL_STATES = listOf(ON, OFF, UNAVAILABLE, UNKNOWN)")
+        sb.appendLine("    }")
+        sb.appendLine("}")
+        sb.appendLine()
+
+        // General entities
+        sb.appendLine("open class SelectEntity(entityId: String) : Entity(entityId)")
+        sb.appendLine("open class ButtonEntity(entityId: String) : Entity(entityId)")
+        sb.appendLine("open class SensorEntity(entityId: String) : Entity(entityId)")
+        sb.appendLine("open class GenericEntity(entityId: String) : Entity(entityId)")
+        sb.appendLine()
+
         sb.appendLine("object Entities {")
 
         for ((domain, list) in byDomain.toSortedMap()) {
             val domainClassName = domain.toPascalCase()
-            val entityType = when (domain) {
-                "light" -> "LightEntity"
-                "switch" -> "SwitchEntity"
-                "sensor" -> "SensorEntity"
-                "binary_sensor" -> "BinarySensorEntity"
-                "climate" -> "ClimateEntity"
-                "cover" -> "CoverEntity"
-                "media_player" -> "MediaPlayerEntity"
-                else -> "GenericEntity"
-            }
+            val entityType = getEntityTypeForDomain(domain)
 
             sb.appendLine("    object $domainClassName {")
             for (item in list) {
                 val propName = item.objectId.toCamelCase()
                 val friendlyComment = item.friendlyName.replace("\n", " ").trim()
+                val options = extractOptions(item)
+
                 sb.appendLine("        /** $friendlyComment (State: ${item.state}) */")
-                sb.appendLine("        val $propName = $entityType(\"${item.entityId}\")")
+                if (options.isNotEmpty()) {
+                    val distinctOptions = mutableMapOf<String, String>()
+                    for (opt in options) {
+                        var cName = opt.toConstantName()
+                        var counter = 1
+                        val base = cName
+                        while (distinctOptions.containsKey(cName)) {
+                            cName = "${base}_${++counter}"
+                        }
+                        distinctOptions[cName] = opt
+                    }
+                    sb.appendLine("        val $propName = object : $entityType(\"${item.entityId}\") {")
+                    for ((cName, optVal) in distinctOptions) {
+                        val escaped = optVal.replace("\\", "\\\\").replace("\"", "\\\"")
+                        sb.appendLine("            val $cName = \"$escaped\"")
+                    }
+                    val optionsList = options.joinToString(", ") { "\"${it.replace("\\", "\\\\").replace("\"", "\\\"")}\"" }
+                    sb.appendLine("            val options = listOf($optionsList)")
+                    sb.appendLine("        }")
+                } else {
+                    sb.appendLine("        val $propName = $entityType(\"${item.entityId}\")")
+                }
             }
             sb.appendLine("    }")
             sb.appendLine()
@@ -115,6 +586,38 @@ class EntityCodeGenerator(private val stateStore: HaStateStore) {
 
         sb.appendLine("}")
         return sb.toString()
+    }
+
+    private fun extractOptions(state: HaState): List<String> {
+        val attrs = state.attributes
+        val rawList = (attrs["options"] as? JsonArray)
+            ?: (attrs["hvac_modes"] as? JsonArray)
+            ?: (attrs["preset_modes"] as? JsonArray)
+        return rawList?.mapNotNull { (it as? JsonPrimitive)?.content }?.filter { it.isNotBlank() }?.distinct() ?: emptyList()
+    }
+
+    private fun getEntityTypeForDomain(domain: String): String = when (domain.lowercase()) {
+        "light" -> "LightEntity"
+        "switch" -> "SwitchEntity"
+        "sensor" -> "SensorEntity"
+        "binary_sensor" -> "BinarySensorEntity"
+        "climate" -> "ClimateEntity"
+        "cover" -> "CoverEntity"
+        "media_player" -> "MediaPlayerEntity"
+        "vacuum" -> "VacuumEntity"
+        "lawn_mower" -> "LawnMowerEntity"
+        "lock" -> "LockEntity"
+        "alarm_control_panel" -> "AlarmControlPanelEntity"
+        "person" -> "PersonEntity"
+        "device_tracker" -> "DeviceTrackerEntity"
+        "sun" -> "SunEntity"
+        "weather" -> "WeatherEntity"
+        "input_boolean" -> "InputBooleanEntity"
+        "select", "input_select" -> "SelectEntity"
+        "update" -> "UpdateEntity"
+        "automation" -> "AutomationEntity"
+        "button", "input_button" -> "ButtonEntity"
+        else -> "GenericEntity"
     }
 
     fun generateToFile(outputFile: File, style: String = "typed", domain: String? = null): File {
@@ -135,19 +638,36 @@ class EntityCodeGenerator(private val stateStore: HaStateStore) {
             "media_player" -> "MediaPlayers"
             "scene" -> "Scenes"
             "automation" -> "Automations"
+            "lawn_mower" -> "LawnMowers"
+            "lock" -> "Locks"
+            "alarm_control_panel" -> "Alarms"
+            "person" -> "Persons"
+            "device_tracker" -> "DeviceTrackers"
+            "input_boolean" -> "InputBooleans"
+            "select" -> "Selects"
+            "input_select" -> "InputSelects"
             else -> this.toPascalCase()
         }
     }
 
     private fun String.toConstantName(): String {
-        val cleaned = this.replace('-', '_').replace('.', '_')
+        val transliterated = this
+            .replace('å', 'a').replace('ä', 'a').replace('ö', 'o')
+            .replace('Å', 'A').replace('Ä', 'A').replace('Ö', 'O')
+            .replace('-', '_').replace('.', '_').replace(' ', '_')
+        val cleaned = transliterated.replace(Regex("[^a-zA-Z0-9_]"), "")
         val upper = cleaned.uppercase()
-        val candidate = if (upper.firstOrNull()?.isDigit() == true) "_$upper" else upper
+        val candidate = if (upper.isEmpty()) "VALUE" else if (upper.first().isDigit()) "_$upper" else upper
         return if (isKotlinKeyword(candidate.lowercase())) "`$candidate`" else candidate
     }
 
     private fun String.toCamelCase(): String {
-        val parts = this.split('_', '-', '.')
+        val transliterated = this
+            .replace('å', 'a').replace('ä', 'a').replace('ö', 'o')
+            .replace('Å', 'A').replace('Ä', 'A').replace('Ö', 'O')
+        val parts = transliterated.split('_', '-', '.', ' ')
+            .map { it.replace(Regex("[^a-zA-Z0-9]"), "") }
+            .filter { it.isNotEmpty() }
         if (parts.isEmpty()) return "entity"
         val first = parts[0].replaceFirstChar { it.lowercase() }
         val rest = parts.drop(1).joinToString("") { part ->
@@ -162,7 +682,12 @@ class EntityCodeGenerator(private val stateStore: HaStateStore) {
     }
 
     private fun String.toPascalCase(): String {
-        return this.split('_', '-', '.')
+        val transliterated = this
+            .replace('å', 'a').replace('ä', 'a').replace('ö', 'o')
+            .replace('Å', 'A').replace('Ä', 'A').replace('Ö', 'O')
+        return transliterated.split('_', '-', '.', ' ')
+            .map { it.replace(Regex("[^a-zA-Z0-9]"), "") }
+            .filter { it.isNotEmpty() }
             .joinToString("") { it.replaceFirstChar { ch -> ch.uppercase() } }
     }
 
