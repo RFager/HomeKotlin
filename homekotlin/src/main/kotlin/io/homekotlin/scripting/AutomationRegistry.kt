@@ -16,18 +16,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.system.measureTimeMillis
 
-@Serializable
-data class ExecutionLogEntry(
-    val id: String = java.util.UUID.randomUUID().toString(),
-    val automationId: String,
-    val automationName: String,
-    val timestamp: Long = System.currentTimeMillis(),
-    val triggerSource: String,
-    val durationMs: Long,
-    val success: Boolean,
-    val error: String? = null
-)
-
 class AutomationRegistry {
     private val logger = LoggerFactory.getLogger(AutomationRegistry::class.java)
     private val automations = ConcurrentHashMap<String, Automation>()

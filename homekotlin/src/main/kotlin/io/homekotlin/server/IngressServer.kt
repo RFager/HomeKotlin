@@ -30,34 +30,6 @@ import kotlinx.serialization.json.put
 import org.slf4j.LoggerFactory
 import java.lang.management.ManagementFactory
 
-@Serializable
-data class AutomationDto(
-    val id: String,
-    val name: String,
-    val description: String,
-    val sourceFile: String?,
-    val triggers: List<String>,
-    val conditionsCount: Int,
-    val enabled: Boolean,
-    val lastTriggered: Long?,
-    val lastTriggerSource: String?,
-    val executionCount: Long,
-    val lastDurationMs: Long?,
-    val lastError: String?
-)
-
-@Serializable
-data class SystemStatusDto(
-    val connectionState: String,
-    val haUrl: String,
-    val isDemoMode: Boolean,
-    val activeAutomations: Int,
-    val totalEntities: Int,
-    val memoryUsageMb: Long,
-    val uptimeSeconds: Long,
-    val isSupervisor: Boolean
-)
-
 class IngressServer(
     private val config: AppConfig,
     private val haClient: HaClient,

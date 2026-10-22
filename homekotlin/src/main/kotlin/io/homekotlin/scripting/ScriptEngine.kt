@@ -13,32 +13,6 @@ import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromT
 
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class ScriptDiagnostic(
-    val line: Int?,
-    val column: Int?,
-    val message: String,
-    val severity: String
-)
-
-@Serializable
-data class ScriptInfo(
-    val filename: String,
-    val path: String,
-    val status: ScriptStatus,
-    val automationCount: Int = 0,
-    val error: String? = null,
-    val diagnostics: List<ScriptDiagnostic> = emptyList(),
-    val lastLoadedAt: Long = System.currentTimeMillis()
-)
-
-@Serializable
-enum class ScriptStatus {
-    LOADED,
-    ERROR,
-    EMPTY
-}
-
 class ScriptEngine(
     private val automationsDir: File,
     private val registry: AutomationRegistry
