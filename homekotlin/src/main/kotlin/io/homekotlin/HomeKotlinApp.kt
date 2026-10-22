@@ -46,6 +46,7 @@ fun main(args: Array<String>) {
     logger.info("Configuration: HA_URL=${config.haUrl}, Port=${config.port}, AutomationsDir=${config.automationsDir}, DemoMode=${config.demoMode}")
 
     val stateStore = HaStateStore()
+    io.homekotlin.generated.Entity.stateStore = stateStore
     val haClient = HaClient(config, stateStore)
     val services = HaServices(haClient)
     val registry = AutomationRegistry()

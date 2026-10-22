@@ -9,17 +9,19 @@ class PresenceLighting : HomeScript() {
         automation("Porch Welcome & Auto-Off") {
             description("Turns on porch lights on motion, waits 3 minutes, then smoothly dims off")
 
-            trigger.state("binary_sensor.porch_motion", to = "on")
+            trigger.state(BinarySensor.ALTAN_DOOR, to = BinarySensor.ALTAN_DOOR.OPEN)
 
             action {
-                log.info("Porch motion detected. Turning on lights at full brightness.")
-                services.light.turnOn("light.porch", brightness = 255)
+                if (BinarySensor.ALTAN_DOOR.state.isOn) {
+                    log.info("Altan door is open. Turning on facade lights at full brightness.")
+                    services.light.turnOn(Light.FACADE, brightness = 255)
 
-                // Wait 2 minutes then dim off
-                delay(2.minutes)
+                    // Wait 2 minutes then dim off
+                    delay(2.minutes)
 
-                log.info("Timer expired. Dimming porch lights off.")
-                services.light.turnOff("light.porch", transition = 5.0)
+                    log.info("Timer expired. Dimming facade lights off.")
+                    services.light.turnOff(Light.FACADE, transition = 5.0)
+                }
             }
         }
 
@@ -30,7 +32,7 @@ class PresenceLighting : HomeScript() {
 
             action {
                 log.info("Good morning! Pre-heating coffee maker.")
-                services.switch.turnOn("switch.coffee_maker")
+                services.switch.turnOn(Switch.COFFEE)
             }
         }
     }

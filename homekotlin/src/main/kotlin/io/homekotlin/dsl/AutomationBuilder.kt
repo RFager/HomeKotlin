@@ -35,6 +35,10 @@ class ActionContext(
 ) {
     val log: Logger = LoggerFactory.getLogger("Automation[${automation.name}]")
 
+    init {
+        io.homekotlin.generated.Entity.stateStore = states
+    }
+
     fun state(entityId: CharSequence): HaState? = states[entityId.toString()]
 
     fun isState(entityId: CharSequence, expected: String): Boolean =
