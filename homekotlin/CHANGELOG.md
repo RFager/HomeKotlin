@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.4] - 2026-10-22
+### Changed
+- Bumped add-on release to 1.0.4 for Home Assistant supervisor update.
+- Updated entities code generator and live entity state properties.
+
 ## [1.0.3] - 2026-10-22
 ### Added
 - Entity live state tracking via `ALTAN_DOOR.state.isOn`, `isOff`, `isOpen`, `isClosed`, etc.

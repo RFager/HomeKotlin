@@ -1,6 +1,6 @@
 name: "HomeKotlin"
 description: "Type-safe, reactive Home Assistant automations written in Kotlin with hot reload and live dashboard"
-version: "1.0.3"
+version: "1.0.4"
 slug: "homekotlin"
 init: false
 arch:
