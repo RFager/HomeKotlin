@@ -5,6 +5,8 @@ data class Automation(
     val name: String,
     val description: String = "",
     val sourceFile: String? = null,
+    var mode: AutomationMode = AutomationMode.SINGLE,
+    var maxRuns: Int = 10,
     val triggers: List<Trigger> = emptyList(),
     val conditions: List<suspend ActionContext.() -> Boolean> = emptyList(),
     val action: suspend ActionContext.() -> Unit,

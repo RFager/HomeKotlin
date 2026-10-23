@@ -1,4 +1,4 @@
-package io.homekotlin.scripting
+package io.homekotlin.automations
 
 import io.homekotlin.dsl.*
 import io.homekotlin.ha.HaStateStore
@@ -7,16 +7,14 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
-import kotlin.system.measureTimeMillis
 
-class AutomationRegistry {
+class AutomationRegistry(
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+) {
     private val logger = LoggerFactory.getLogger(AutomationRegistry::class.java)
     private val automations = ConcurrentHashMap<String, Automation>()
     private val executionHistory = ConcurrentLinkedDeque<ExecutionLogEntry>()
@@ -27,18 +25,43 @@ class AutomationRegistry {
 
     private val timerJobs = ConcurrentHashMap<String, Job>()
 
+    private val runner = AutomationRunner(coroutineScope) { entry ->
+        executionHistory.addFirst(entry)
+        while (executionHistory.size > maxHistorySize) {
+            executionHistory.removeLast()
+        }
+        _executionEvents.emit(entry)
+    }
+
     fun register(automation: Automation) {
         automations[automation.id] = automation
-        logger.info("Registered automation '${automation.name}' [${automation.id}] from ${automation.sourceFile ?: "internal"}")
+        logger.info("Registered automation '${automation.name}' [${automation.id}] (mode: ${automation.mode.title}) from ${automation.sourceFile ?: "internal"}")
+    }
+
+    fun register(script: HomeScript) {
+        script.configure()
+        val sourceName = script::class.simpleName + ".kt"
+        for (a in script.registeredAutomations) {
+            register(a.copy(sourceFile = sourceName))
+        }
     }
 
     fun unregisterBySource(sourceFile: String) {
         val toRemove = automations.values.filter { it.sourceFile == sourceFile }
         for (a in toRemove) {
+            runner.cancelAll(a.id)
             timerJobs.remove(a.id)?.cancel()
             automations.remove(a.id)
             logger.info("Unregistered automation '${a.name}' (${a.id})")
         }
+    }
+
+    fun clear() {
+        runner.clear()
+        timerJobs.values.forEach { it.cancel() }
+        timerJobs.clear()
+        automations.clear()
+        logger.info("Cleared all registered automations")
     }
 
     fun get(id: String): Automation? = automations[id]
@@ -47,10 +70,22 @@ class AutomationRegistry {
 
     fun count(): Int = automations.size
 
+    fun getRunningCount(id: String): Int = runner.getRunningCount(id)
+
     fun toggle(id: String): Boolean? {
         val a = automations[id] ?: return null
         a.enabled = !a.enabled
         return a.enabled
+    }
+
+    fun setMode(id: String, mode: AutomationMode, maxRuns: Int? = null): Boolean {
+        val a = automations[id] ?: return false
+        a.mode = mode
+        if (maxRuns != null && maxRuns > 0) {
+            a.maxRuns = maxRuns
+        }
+        logger.info("Updated execution mode for '${a.name}' to ${mode.title} [${mode.id}] (maxRuns: ${a.maxRuns})")
+        return true
     }
 
     fun history(): List<ExecutionLogEntry> = executionHistory.toList()
@@ -168,66 +203,12 @@ class AutomationRegistry {
         stateStore: HaStateStore,
         services: HaServices
     ): ExecutionLogEntry {
-        val context = ActionContext(
+        return runner.execute(
             automation = automation,
-            states = stateStore,
-            services = services,
             trigger = trigger,
-            triggerEvent = triggerEvent
+            triggerEvent = triggerEvent,
+            stateStore = stateStore,
+            services = services
         )
-
-        // Evaluate conditions
-        val conditionsMet = automation.conditions.all { cond ->
-            try {
-                cond(context)
-            } catch (e: Exception) {
-                logger.warn("Condition evaluation failed for '${automation.name}': ${e.message}")
-                false
-            }
-        }
-
-        if (!conditionsMet) {
-            return ExecutionLogEntry(
-                automationId = automation.id,
-                automationName = automation.name,
-                triggerSource = trigger.description,
-                durationMs = 0,
-                success = false,
-                error = "Conditions not met"
-            )
-        }
-
-        var executionError: String? = null
-        val duration = measureTimeMillis {
-            try {
-                automation.action(context)
-            } catch (e: Exception) {
-                executionError = e.message ?: e.toString()
-                logger.error("Execution failed for automation '${automation.name}': ${e.message}", e)
-            }
-        }
-
-        automation.lastTriggered = System.currentTimeMillis()
-        automation.lastTriggerSource = trigger.description
-        automation.executionCount++
-        automation.lastDurationMs = duration
-        automation.lastError = executionError
-
-        val entry = ExecutionLogEntry(
-            automationId = automation.id,
-            automationName = automation.name,
-            triggerSource = trigger.description,
-            durationMs = duration,
-            success = executionError == null,
-            error = executionError
-        )
-
-        executionHistory.addFirst(entry)
-        while (executionHistory.size > maxHistorySize) {
-            executionHistory.removeLast()
-        }
-
-        _executionEvents.emit(entry)
-        return entry
     }
 }

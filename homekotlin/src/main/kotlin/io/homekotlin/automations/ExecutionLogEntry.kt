@@ -1,4 +1,4 @@
-package io.homekotlin.scripting
+package io.homekotlin.automations
 
 import kotlinx.serialization.Serializable
 

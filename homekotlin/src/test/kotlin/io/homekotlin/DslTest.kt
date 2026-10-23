@@ -24,8 +24,30 @@ class DslTest {
         assertEquals("Test Motion Automation", automation.name)
         assertEquals("A test automation", automation.description)
         assertEquals("test.kts", automation.sourceFile)
+        assertEquals(AutomationMode.SINGLE, automation.mode)
         assertEquals(1, automation.triggers.size)
         assertTrue(automation.triggers[0] is StateTrigger)
+    }
+
+    @Test
+    fun `test automation builder with restart mode and Swedish aliases`() {
+        val builder = AutomationBuilder("Porch Lighting", "porch_lighting")
+        builder.restartMode()
+        val a1 = builder.build()
+        assertEquals(AutomationMode.RESTART, a1.mode)
+        assertEquals("Starta om", a1.mode.title)
+
+        builder.mode(AutomationMode.QUEUED, max = 5)
+        val a2 = builder.build()
+        assertEquals(AutomationMode.QUEUED, a2.mode)
+        assertEquals(5, a2.maxRuns)
+        assertEquals("På kö", a2.mode.title)
+
+        builder.körläge(Körläge.PARALLELL, max = 8)
+        val a3 = builder.build()
+        assertEquals(AutomationMode.PARALLEL, a3.mode)
+        assertEquals(8, a3.maxRuns)
+        assertEquals("Parallell", a3.mode.title)
     }
 
     @Test

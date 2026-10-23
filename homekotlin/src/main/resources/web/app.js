@@ -5,7 +5,6 @@ const apiBase = basePath ? `${basePath}/api` : '/api';
 
 let automations = [];
 let entities = [];
-let scripts = [];
 let feedItems = [];
 let feedFilter = 'all';
 let currentDomainFilter = '';
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchStatus();
   fetchAutomations();
   fetchEntities();
-  fetchScripts();
   fetchServices();
   fetchTriggers();
   initEventStream();
@@ -112,7 +110,7 @@ function renderAutomations() {
     container.innerHTML = `
       <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-dim);">
         <p style="font-size: 16px; margin-bottom: 8px;">No automations found matching your search</p>
-        <span style="font-size: 13px;">Create new automations in <code class="inline-code">automations/*.kts</code></span>
+        <span style="font-size: 13px;">Create new automations in <code class="inline-code">io.homekotlin.automations</code></span>
       </div>`;
     return;
   }
@@ -128,7 +126,13 @@ function renderAutomations() {
           <div class="card-top">
             <div class="card-title-group">
               <h3 class="card-title">${escapeHtml(a.name)}</h3>
-              <span class="card-source-tag">${escapeHtml(a.sourceFile || 'built-in')}</span>
+              <div class="card-tags-row">
+                <span class="card-source-tag">${escapeHtml(a.sourceFile || 'built-in')}</span>
+                <button class="mode-badge mode-${a.mode || 'single'}" onclick="openModeModal('${a.id}')" title="Ändra körläge (nuvarande: ${escapeHtml(a.modeTitle || 'Enskild')})">
+                  ${getModeIcon(a.mode)} ${escapeHtml(a.modeTitle || 'Enskild')}${a.mode === 'queued' || a.mode === 'parallel' ? ` (${a.maxRuns || 10})` : ''}
+                </button>
+                ${(a.runningCount && a.runningCount > 0) ? `<span class="running-indicator pulse-badge">● Körs (${a.runningCount})</span>` : ''}
+              </div>
             </div>
             <label class="switch" title="Toggle Automation">
               <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAutomation('${a.id}')">
@@ -355,58 +359,20 @@ function updateEntityStateInTable(event) {
   }
 }
 
-// 5. Scripts & Reload
-async function fetchScripts() {
+// 5. Automations Reload
+async function reloadAutomations() {
+  showToast('Reloading', 'Reloading automations from project...');
   try {
-    const res = await fetch(`${apiBase}/scripts`);
-    if (!res.ok) return;
-    scripts = await res.json();
-    document.getElementById('badge-scripts-count').innerText = scripts.length;
-    renderScripts();
-  } catch (err) {}
-}
-
-function renderScripts() {
-  const container = document.getElementById('scripts-container');
-  if (scripts.length === 0) {
-    container.innerHTML = `<div style="padding: 20px; color: var(--text-dim);">No script files detected yet.</div>`;
-    return;
-  }
-
-  container.innerHTML = scripts.map(s => {
-    const isOk = s.status === 'LOADED';
-    const statusBadge = isOk
-      ? `<span class="script-status-badge status-loaded">✓ LOADED (${s.automationCount} automations)</span>`
-      : `<span class="script-status-badge status-error">✕ COMPILATION ERROR</span>`;
-
-    const errorBox = s.error ? `<div class="diag-error-box"><strong>Error:</strong> ${escapeHtml(s.error)}</div>` : '';
-
-    return `
-      <div class="script-item-card">
-        <div style="flex: 1;">
-          <div class="script-header">
-            <span class="script-name">${escapeHtml(s.filename)}</span>
-            ${statusBadge}
-          </div>
-          <div style="margin-top: 4px; font-size: 12px; color: var(--text-dim);">Path: ${escapeHtml(s.path)}</div>
-          ${errorBox}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-async function reloadScripts() {
-  showToast('Reloading', 'Recompiling all automation scripts...');
-  try {
-    const res = await fetch(`${apiBase}/scripts/reload`, { method: 'POST' });
+    const res = await fetch(`${apiBase}/automations/reload`, { method: 'POST' });
     if (res.ok) {
-      await fetchScripts();
+      const data = await res.json();
       await fetchAutomations();
-      showToast('Success', 'Scripts recompiled successfully!');
+      showToast('Success', `Loaded ${data.count} automation(s) from project`);
+    } else {
+      showToast('Error', 'Failed to reload automations', true);
     }
   } catch (err) {
-    showToast('Error', 'Reload failed', true);
+    showToast('Error', 'Reload failed: ' + err.message, true);
   }
 }
 
@@ -725,4 +691,126 @@ function renderTriggers() {
     }
   }
 }
+
+// ==========================================
+// Automation Execution Mode ("Ändra körläge")
+// ==========================================
+
+let activeModeModalAutomationId = null;
+let selectedModalMode = 'single';
+
+function getModeIcon(mode) {
+  switch (mode) {
+    case 'restart': return '🔄';
+    case 'queued': return '📥';
+    case 'parallel': return '🔀';
+    case 'single':
+    default: return '⚡';
+  }
+}
+
+function openModeModal(automationId) {
+  const auto = automations.find(a => a.id === automationId);
+  if (!auto) return;
+
+  activeModeModalAutomationId = automationId;
+  selectedModalMode = auto.mode || 'single';
+
+  const nameEl = document.getElementById('mode-modal-automation-name');
+  if (nameEl) nameEl.innerText = auto.name;
+
+  const maxInput = document.getElementById('mode-max-runs-input');
+  if (maxInput) {
+    maxInput.value = auto.maxRuns || 10;
+  }
+
+  updateModalModeSelection(selectedModalMode);
+
+  const modal = document.getElementById('mode-modal');
+  if (modal) {
+    modal.classList.add('active');
+  }
+}
+
+function closeModeModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const modal = document.getElementById('mode-modal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+  activeModeModalAutomationId = null;
+}
+
+function selectModalMode(modeId) {
+  selectedModalMode = modeId;
+  updateModalModeSelection(modeId);
+}
+
+function updateModalModeSelection(modeId) {
+  const modes = ['single', 'restart', 'queued', 'parallel'];
+  modes.forEach(m => {
+    const card = document.getElementById(`mode-card-${m}`);
+    if (card) {
+      if (m === modeId) {
+        card.classList.add('selected');
+      } else {
+        card.classList.remove('selected');
+      }
+    }
+  });
+
+  const maxSection = document.getElementById('mode-max-section');
+  if (maxSection) {
+    if (modeId === 'queued' || modeId === 'parallel') {
+      maxSection.style.display = 'flex';
+    } else {
+      maxSection.style.display = 'none';
+    }
+  }
+}
+
+async function saveAutomationMode() {
+  if (!activeModeModalAutomationId) return;
+
+  const auto = automations.find(a => a.id === activeModeModalAutomationId);
+  const maxInput = document.getElementById('mode-max-runs-input');
+  const maxRuns = maxInput ? parseInt(maxInput.value, 10) || 10 : 10;
+
+  try {
+    const res = await fetch(`${apiBase}/automations/${activeModeModalAutomationId}/mode`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: selectedModalMode,
+        maxRuns: maxRuns
+      })
+    });
+
+    if (res.ok) {
+      const updated = await res.json();
+      if (auto) {
+        auto.mode = updated.mode;
+        auto.modeTitle = updated.modeTitle;
+        auto.modeDescription = updated.modeDescription;
+        auto.maxRuns = updated.maxRuns;
+      }
+      renderAutomations();
+      showToast('Körläge uppdaterat', `Körläge för "${auto ? auto.name : activeModeModalAutomationId}" ändrades till ${updated.modeTitle}`);
+      closeModeModal();
+    } else {
+      showToast('Fel', 'Kunde inte uppdatera körläge', true);
+    }
+  } catch (err) {
+    console.error('Failed to update automation mode', err);
+    showToast('Fel', 'Nätverksfel vid uppdatering av körläge', true);
+  }
+}
+
+function toggleModeHelp() {
+  showToast(
+    'Körlägen i Home Assistant',
+    'Enskild: Hoppar över körning om redan aktiv.\nStarta om: Avbryter pågående körning och startar om.\nPå kö: Körningar köas och körs i tur och ordning.\nParallell: Oberoende körningar körs samtidigt.'
+  );
+}
+
 

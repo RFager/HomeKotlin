@@ -36,7 +36,7 @@
         <div class="brand-text">
           <div class="brand-title-row">
             <h1 class="brand-title">HomeKotlin</h1>
-            <span class="version-tag">v1.0.4</span>
+            <span class="version-tag">v1.0.5</span>
           </div>
           <p class="brand-subtitle">Reactive Kotlin Automation Daemon for Home Assistant</p>
         </div>
@@ -86,10 +86,6 @@
           <span class="tab-icon">🔍</span> Entity Inspector
           <span class="badge" id="badge-entities-count">0</span>
         </button>
-        <button class="nav-tab" id="tab-btn-scripts" onclick="switchTab('scripts')">
-          <span class="tab-icon">📜</span> Scripts & Reload
-          <span class="badge" id="badge-scripts-count">0</span>
-        </button>
         <button class="nav-tab" id="tab-btn-services" onclick="switchTab('services')">
           <span class="tab-icon">🛠️</span> Services & Triggers
           <span class="badge" id="badge-services-count">0</span>
@@ -100,8 +96,8 @@
         <button class="action-btn secondary-btn" id="btn-codegen" onclick="openCodegenModal()">
           <span class="btn-icon">📦</span> Export Kotlin Code
         </button>
-        <button class="action-btn primary-btn" id="btn-reload-scripts" onclick="reloadScripts()">
-          <span class="btn-icon">🔄</span> Hot Reload
+        <button class="action-btn primary-btn" id="btn-reload-automations" onclick="reloadAutomations()">
+          <span class="btn-icon">🔄</span> Reload Automations
         </button>
       </div>
     </nav>
@@ -192,22 +188,6 @@
         </div>
       </section>
 
-      <!-- 4. Scripts & Hot Reload View -->
-      <section class="tab-panel" id="panel-scripts">
-        <div class="panel-header">
-          <div>
-            <h2 class="section-title">Automation Script Files</h2>
-            <p class="section-desc">Scripts in the <code class="inline-code" id="scripts-dir-label">automations/</code> folder are compiled on-the-fly and hot-reloaded instantly when saved.</p>
-          </div>
-          <button class="action-btn primary-btn" onclick="reloadScripts()">
-            <span class="btn-icon">⚡</span> Recompile All
-          </button>
-        </div>
-
-        <div class="scripts-list" id="scripts-container">
-          <!-- Rendered via JS -->
-        </div>
-      </section>
 
       <!-- 5. Services & Triggers Explorer View -->
       <section class="tab-panel" id="panel-services">
@@ -320,7 +300,7 @@
 
         <div class="modal-footer">
           <div class="modal-footer-hint">
-            <span>💡</span> Paste directly into your <code class="inline-code">.kts</code> / <code class="inline-code">.kt</code> automations, or save to project.
+            <span>💡</span> Paste directly into your <code class="inline-code">.kt</code> automations, or save to project.
           </div>
           <div class="modal-footer-actions">
             <button class="action-btn secondary-btn" onclick="downloadCodegenFile()" title="Download file directly">
@@ -333,6 +313,87 @@
               <span class="btn-icon">📋</span> Copy Code
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Home Assistant Execution Mode ("Ändra körläge") Modal -->
+    <div class="modal-backdrop" id="mode-modal" onclick="closeModeModal(event)">
+      <div class="modal-card modal-card-ha-mode" onclick="event.stopPropagation()">
+        <div class="ha-mode-header">
+          <button class="ha-close-btn" onclick="closeModeModal()" title="Stäng">✕</button>
+          <h3 class="ha-mode-title">Ändra körläge</h3>
+          <button class="ha-help-btn" onclick="toggleModeHelp()" title="Hjälp om körlägen">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="ha-mode-target-banner">
+          <span class="ha-mode-target-label">Automation</span>
+          <span class="ha-mode-target-name" id="mode-modal-automation-name">...</span>
+        </div>
+
+        <div class="ha-mode-options-list">
+          <!-- 1. Enskild (Single) -->
+          <div class="ha-mode-card" id="mode-card-single" onclick="selectModalMode('single')">
+            <div class="ha-radio-circle">
+              <div class="ha-radio-inner"></div>
+            </div>
+            <div class="ha-mode-text-group">
+              <div class="ha-mode-name">Enskild</div>
+              <div class="ha-mode-desc">Starta inte en ny körning. Utfärda en varning.</div>
+            </div>
+          </div>
+
+          <!-- 2. Starta om (Restart) -->
+          <div class="ha-mode-card" id="mode-card-restart" onclick="selectModalMode('restart')">
+            <div class="ha-radio-circle">
+              <div class="ha-radio-inner"></div>
+            </div>
+            <div class="ha-mode-text-group">
+              <div class="ha-mode-name">Starta om</div>
+              <div class="ha-mode-desc">Starta en ny körning efter att först ha stoppat den föregående körningen.</div>
+            </div>
+          </div>
+
+          <!-- 3. På kö (Queued) -->
+          <div class="ha-mode-card" id="mode-card-queued" onclick="selectModalMode('queued')">
+            <div class="ha-radio-circle">
+              <div class="ha-radio-inner"></div>
+            </div>
+            <div class="ha-mode-text-group">
+              <div class="ha-mode-name">På kö</div>
+              <div class="ha-mode-desc">Starta en ny körning efter att alla tidigare körningar har slutförts.</div>
+            </div>
+          </div>
+
+          <!-- 4. Parallell (Parallel) -->
+          <div class="ha-mode-card" id="mode-card-parallel" onclick="selectModalMode('parallel')">
+            <div class="ha-radio-circle">
+              <div class="ha-radio-inner"></div>
+            </div>
+            <div class="ha-mode-text-group">
+              <div class="ha-mode-name">Parallell</div>
+              <div class="ha-mode-desc">Starta en ny, oberoende körning parallellt med tidigare körningar.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Optional Max Runs (for queued / parallel) -->
+        <div class="ha-mode-max-section" id="mode-max-section" style="display: none;">
+          <label for="mode-max-runs-input" class="ha-mode-max-label">Maximalt antal körningar</label>
+          <div class="ha-mode-max-row">
+            <input type="number" id="mode-max-runs-input" class="ha-number-input" min="1" max="100" value="10">
+            <span class="ha-mode-max-hint">Högsta antal tillåtna samtidiga eller köade körningar (standard: 10)</span>
+          </div>
+        </div>
+
+        <!-- Action buttons matching Home Assistant modal -->
+        <div class="ha-mode-actions">
+          <button class="ha-btn-cancel" onclick="closeModeModal()">Avbryt</button>
+          <button class="ha-btn-confirm" id="btn-save-mode" onclick="saveAutomationMode()">Ändra körläge</button>
         </div>
       </div>
     </div>

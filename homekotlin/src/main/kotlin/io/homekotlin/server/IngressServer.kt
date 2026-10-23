@@ -4,11 +4,12 @@ import io.homekotlin.codegen.EntityCodeGenerator
 import io.homekotlin.config.AppConfig
 import io.homekotlin.ha.HaClient
 import io.homekotlin.ha.HaStateStore
-import io.homekotlin.scripting.AutomationRegistry
-import io.homekotlin.scripting.ScriptEngine
+import io.homekotlin.automations.AutomationRegistry
+import io.homekotlin.automations.registerAutomations
 import io.homekotlin.dsl.TriggerCatalog
 import io.homekotlin.ha.ActiveTriggerInfo
 import io.homekotlin.ha.TriggersCatalogDto
+import io.homekotlin.dsl.AutomationMode
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -16,6 +17,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
@@ -35,7 +37,6 @@ class IngressServer(
     private val haClient: HaClient,
     private val stateStore: HaStateStore,
     private val registry: AutomationRegistry,
-    private val scriptEngine: ScriptEngine,
     private val codeGenerator: EntityCodeGenerator
 ) {
     private val logger = LoggerFactory.getLogger(IngressServer::class.java)
@@ -112,6 +113,11 @@ class IngressServer(
                                 name = a.name,
                                 description = a.description,
                                 sourceFile = a.sourceFile,
+                                mode = a.mode.id,
+                                modeTitle = a.mode.title,
+                                modeDescription = a.mode.description,
+                                maxRuns = a.maxRuns,
+                                runningCount = registry.getRunningCount(a.id),
                                 triggers = a.triggers.map { it.description },
                                 conditionsCount = a.conditions.size,
                                 enabled = a.enabled,
@@ -123,6 +129,53 @@ class IngressServer(
                             )
                         }
                         call.respond(list)
+                    }
+
+                    get("/modes") {
+                        val modes = AutomationMode.entries.map { m ->
+                            mapOf(
+                                "id" to m.id,
+                                "title" to m.title,
+                                "description" to m.description
+                            )
+                        }
+                        call.respond(modes)
+                    }
+
+                    post("/automations/{id}/mode") {
+                        val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+                        val a = registry.get(id) ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Automation not found"))
+
+                        val req = try {
+                            call.receive<UpdateModeRequestDto>()
+                        } catch (e: Exception) {
+                            return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid mode payload: ${e.message}"))
+                        }
+
+                        val targetMode = AutomationMode.fromString(req.mode)
+                        registry.setMode(id, targetMode, req.maxRuns)
+
+                        call.respond(
+                            AutomationDto(
+                                id = a.id,
+                                name = a.name,
+                                description = a.description,
+                                sourceFile = a.sourceFile,
+                                mode = a.mode.id,
+                                modeTitle = a.mode.title,
+                                modeDescription = a.mode.description,
+                                maxRuns = a.maxRuns,
+                                runningCount = registry.getRunningCount(a.id),
+                                triggers = a.triggers.map { it.description },
+                                conditionsCount = a.conditions.size,
+                                enabled = a.enabled,
+                                lastTriggered = a.lastTriggered,
+                                lastTriggerSource = a.lastTriggerSource,
+                                executionCount = a.executionCount,
+                                lastDurationMs = a.lastDurationMs,
+                                lastError = a.lastError
+                            )
+                        )
                     }
 
                     post("/automations/{id}/toggle") {
@@ -161,13 +214,10 @@ class IngressServer(
                         call.respond(entities)
                     }
 
-                    get("/scripts") {
-                        call.respond(scriptEngine.allScripts())
-                    }
-
-                    post("/scripts/reload") {
-                        scriptEngine.loadAll()
-                        call.respond(mapOf("status" to "reloaded", "count" to scriptEngine.allScripts().size))
+                    post("/automations/reload") {
+                        registry.clear()
+                        registry.registerAutomations()
+                        call.respond(mapOf("status" to "reloaded", "count" to registry.count()))
                     }
 
                     get("/codegen") {

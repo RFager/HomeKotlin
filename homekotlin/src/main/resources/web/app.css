@@ -1075,3 +1075,318 @@ input:checked + .slider:before {
   border-radius: 4px;
 }
 
+/* ==========================================================================
+   Home Assistant "Ändra körläge" (Execution Mode) Styles
+   ========================================================================== */
+
+.modal-card-ha-mode {
+  width: 580px;
+  max-width: 95vw;
+  background: #181B1F;
+  border: 1px solid #2B303A;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ha-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+}
+
+.ha-close-btn, .ha-help-btn {
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.ha-close-btn:hover, .ha-help-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ha-mode-title {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+  flex: 1;
+  margin-left: 14px;
+}
+
+.ha-mode-target-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.ha-mode-target-label {
+  color: #9CA3AF;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.ha-mode-target-name {
+  color: #F3F4F6;
+  font-weight: 600;
+}
+
+.ha-mode-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ha-mode-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #20242B;
+  border: 1px solid #2E3440;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.ha-mode-card:hover {
+  background: #252A33;
+  border-color: #3E4656;
+}
+
+.ha-mode-card.selected {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: #06B6D4;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.18);
+}
+
+.ha-radio-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+.ha-radio-inner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.ha-mode-card.selected .ha-radio-circle {
+  border-color: #06B6D4;
+}
+
+.ha-mode-card.selected .ha-radio-inner {
+  background: #06B6D4;
+}
+
+.ha-mode-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ha-mode-name {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.ha-mode-desc {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #94A3B8;
+  line-height: 1.4;
+}
+
+.ha-mode-max-section {
+  padding: 14px 18px;
+  background: rgba(6, 182, 212, 0.05);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ha-mode-max-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #E2E8F0;
+}
+
+.ha-mode-max-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ha-number-input {
+  width: 90px;
+  padding: 8px 12px;
+  background: #111418;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #FFF;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ha-number-input:focus {
+  outline: none;
+  border-color: #06B6D4;
+}
+
+.ha-mode-max-hint {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.ha-mode-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ha-btn-cancel {
+  background: transparent;
+  border: none;
+  color: #06B6D4;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.ha-btn-cancel:hover {
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.ha-btn-confirm {
+  background: #06B6D4;
+  color: #0B132B;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+  transition: all 0.2s ease;
+}
+
+.ha-btn-confirm:hover {
+  background: #22D3EE;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(6, 182, 212, 0.5);
+}
+
+/* Automation Card Mode Pill Badges */
+.card-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.mode-badge:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+
+.mode-badge.mode-restart {
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.mode-badge.mode-single {
+  color: #C084FC;
+  background: rgba(192, 132, 252, 0.12);
+  border-color: rgba(192, 132, 252, 0.35);
+}
+
+.mode-badge.mode-queued {
+  color: #FBBF24;
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.mode-badge.mode-parallel {
+  color: #34D399;
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.running-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+

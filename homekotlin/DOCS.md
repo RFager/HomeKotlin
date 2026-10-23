@@ -15,7 +15,7 @@ Write type-safe, reactive Home Assistant automations in **Kotlin** with live tel
       }
   }
   ```
-- **Hot Reloading**: Edit your `.kts` files in `/config/homekotlin/automations/` and they reload immediately without restarting.
+- **Type-Safe Compiled Automations**: Write high-performance automations with full IDE autocompletion and compile-time validation.
 - **Ingress Web Dashboard**: View active automations, live state changes, execution statistics, and run manual tests directly in Home Assistant.
 - **Type-Safe Entity Codegen**: Generate typed entity objects (`Entities.Light.LivingRoom`) from your Home Assistant state registry.
 
@@ -30,5 +30,4 @@ Write type-safe, reactive Home Assistant automations in **Kotlin** with live tel
 ## Configuration
 
 In the Add-on Configuration tab:
-- `automations_dir`: Directory where `.kts` scripts reside (default: `/config/homekotlin/automations`).
 - `log_level`: `DEBUG`, `INFO`, `WARN`, or `ERROR`.

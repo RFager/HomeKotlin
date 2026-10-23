@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.5] - 2026-10-23
+### Changed
+- Reorganized codebase into single class/function per file architecture.
+- Removed dynamic script loading; automations are compiled directly in `io.homekotlin.automations`.
+- Cleaned up build dependencies and Ingress web dashboard.
+
 ## [1.0.4] - 2026-10-22
 ### Changed
 - Bumped add-on release to 1.0.4 for Home Assistant supervisor update.

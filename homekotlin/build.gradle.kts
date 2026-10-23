@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.homekotlin"
-version = "1.0.4"
+version = "1.0.5"
 
 repositories {
     mavenCentral()
@@ -37,10 +37,6 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
     implementation("io.ktor:ktor-server-sse:$ktorVersion")
 
-    // Kotlin Compiler Scripting & dynamic evaluation
-    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm:2.0.21")
-    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm-host:2.0.21")
-    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.0.21")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.12")

@@ -1,13 +1,12 @@
 package io.homekotlin
 
+import io.homekotlin.automations.AutomationRegistry
+import io.homekotlin.automations.registerAutomations
 import io.homekotlin.codegen.EntityCodeGenerator
 import io.homekotlin.config.AppConfig
 import io.homekotlin.dsl.HaServices
 import io.homekotlin.ha.HaClient
 import io.homekotlin.ha.HaStateStore
-import io.homekotlin.scripting.AutomationRegistry
-import io.homekotlin.scripting.ScriptEngine
-import io.homekotlin.scripting.ScriptWatcher
 import io.homekotlin.server.IngressServer
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
@@ -34,7 +33,6 @@ fun main(args: Array<String>) {
               HA_URL                Home Assistant WebSocket URL (default: ws://localhost:8123/api/websocket)
               HA_TOKEN              Home Assistant Long-Lived Access Token
               SUPERVISOR_TOKEN      Home Assistant Supervisor Token (automatically set in HA Add-on mode)
-              AUTOMATIONS_DIR       Directory where .kts scripts reside (default: automations)
               PORT                  Web server Ingress port (default: 8099)
               DEMO_MODE             Run in simulation mode without connecting to live HA (true/false)
             """.trimIndent()
@@ -43,7 +41,7 @@ fun main(args: Array<String>) {
     }
 
     val config = AppConfig.load()
-    logger.info("Configuration: HA_URL=${config.haUrl}, Port=${config.port}, AutomationsDir=${config.automationsDir}, DemoMode=${config.demoMode}")
+    logger.info("Configuration: HA_URL=${config.haUrl}, Port=${config.port}, DemoMode=${config.demoMode}")
 
     val stateStore = HaStateStore()
     io.homekotlin.generated.Entity.stateStore = stateStore
@@ -51,10 +49,6 @@ fun main(args: Array<String>) {
     val services = HaServices(haClient)
     val registry = AutomationRegistry()
     val codeGenerator = EntityCodeGenerator(stateStore)
-
-    val automationsFolder = File(config.automationsDir)
-    val scriptEngine = ScriptEngine(automationsFolder, registry)
-    val scriptWatcher = ScriptWatcher(automationsFolder, scriptEngine)
 
     if (args.contains("--generate-entities")) {
         logger.info("Generating Entities.kt from current states...")
@@ -73,24 +67,19 @@ fun main(args: Array<String>) {
     // 1. Start Home Assistant Client
     haClient.start(appScope)
 
-    // 2. Load compiled automations and dynamic scripts from disk
-    io.homekotlin.automations.CompiledAutomationLoader.loadAll(registry)
-    scriptEngine.loadAll()
+    // 2. Load automations from the project's automations folder
+    registry.registerAutomations()
 
-    // 3. Start script hot-reload file watcher
-    scriptWatcher.start(appScope)
-
-    // 4. Start event and timer dispatchers
+    // 3. Start event and timer dispatchers
     registry.startEventDispatcher(appScope, stateStore, services)
     registry.startTimerDispatcher(appScope, stateStore, services)
 
-    // 5. Start Ingress Web Server
-    val server = IngressServer(config, haClient, stateStore, registry, scriptEngine, codeGenerator)
+    // 4. Start Ingress Web Server
+    val server = IngressServer(config, haClient, stateStore, registry, codeGenerator)
     server.start()
 
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down HomeKotlin...")
-        scriptWatcher.stop()
         server.stop()
         appScope.cancel()
         logger.info("HomeKotlin stopped gracefully.")

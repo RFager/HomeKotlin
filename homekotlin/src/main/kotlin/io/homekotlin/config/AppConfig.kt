@@ -9,7 +9,6 @@ data class AppConfig(
     val haUrl: String = "ws://localhost:8123/api/websocket",
     val haToken: String = "",
     val isSupervisor: Boolean = false,
-    val automationsDir: String = "automations",
     val port: Int = 8099,
     val logLevel: String = "INFO",
     val demoMode: Boolean = false
@@ -41,10 +40,6 @@ data class AppConfig(
                 ?: options?.get("ha_token")?.jsonPrimitive?.content
                 ?: ""
 
-            val automationsDir = System.getenv("AUTOMATIONS_DIR")
-                ?: options?.get("automations_dir")?.jsonPrimitive?.content
-                ?: if (isSupervisor) "/config/homekotlin/automations" else "automations"
-
             val port = System.getenv("PORT")?.toIntOrNull()
                 ?: options?.get("port")?.jsonPrimitive?.content?.toIntOrNull()
                 ?: 8099
@@ -61,7 +56,6 @@ data class AppConfig(
                 haUrl = haUrl,
                 haToken = haToken,
                 isSupervisor = isSupervisor,
-                automationsDir = automationsDir,
                 port = port,
                 logLevel = logLevel,
                 demoMode = demoMode
